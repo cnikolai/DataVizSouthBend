@@ -1,15 +1,16 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
 #install.packages("shinythemes")
 library(shinythemes)
+library(sf)
+
+#global variables
+#setwd("SouthBend") #for console only
+abandoned.properties <- st_read("Abandoned_Property_Parcels.shp")
+street.lights <- read.csv("Street_Lights.csv")
+parks <- read.csv("Public_Facilities.csv")
+code.enforcement <- read.csv("Code_Enforcement_Cases.csv")
+schools <- st_read("School_Boundaries.shp")
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("flatly"), 
