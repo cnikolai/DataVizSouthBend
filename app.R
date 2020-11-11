@@ -3,6 +3,7 @@ library(shiny)
 library(shinythemes)
 library(leaflet)
 library(sf)
+library(tidyverse)
 
 
 
@@ -23,21 +24,20 @@ parkLocDf.spatial <- parkLocDf.points %>% #projecting the table as an sf and set
 
 #Generate the Icon List
 parkIcons <- iconList(
-    Neighborhood = makeIcon(iconUrl = "Icons/Neighborhood Park.png",  iconWidth = 20, iconHeight = 20),
-    Zoo = makeIcon(iconUrl = "Icons/Zoo.png", iconWidth = 20, iconHeight = 20),
-    Community = makeIcon(iconUrl = "Icons/Community Park.png", iconWidth = 20, iconHeight = 20),
-    Special = makeIcon(iconUrl = "Icons/Special.png", iconWidth = 20, iconHeight = 20),
-    Memorial = makeIcon(iconUrl = "Icons/Memorial.png", iconWidth = 20, iconHeight = 20),
-    Block = makeIcon(iconUrl = "Icons/Block Park.png", iconWidth = 20, iconHeight = 20),
-    Cemetery = makeIcon(iconUrl = "Icons/Cemetery.png", iconWidth = 20, iconHeight = 20),
-    Golf = makeIcon(iconUrl = "Icons/Golf Course.png", iconWidth = 20, iconHeight = 20)
+    Neighborhood = makeIcon(iconUrl = "Icons/Neighborhood Park.png",  iconWidth = 25, iconHeight = 25),
+    Zoo = makeIcon(iconUrl = "Icons/Zoo.png", iconWidth = 25, iconHeight = 25),
+    Community = makeIcon(iconUrl = "Icons/Community Park.png", iconWidth = 25, iconHeight = 25),
+    Special = makeIcon(iconUrl = "Icons/Special.png", iconWidth = 25, iconHeight = 25),
+    Memorial = makeIcon(iconUrl = "Icons/Memorial.png", iconWidth = 25, iconHeight = 25),
+    Block = makeIcon(iconUrl = "Icons/Block Park.png", iconWidth = 25, iconHeight = 25),
+    Cemetery = makeIcon(iconUrl = "Icons/Cemetery.png", iconWidth = 25, iconHeight = 25),
+    Golf = makeIcon(iconUrl = "Icons/Golf Course.png", iconWidth = 25, iconHeight = 25)
 )
 
 #Assign the Icon
 parkLocDf.spatial['icon'] <- sapply(strsplit(parkLocDf.spatial$Park_Type," "), `[`, 1)
 
-html_legend <- "<img src='Neighborhood Park.png'>green<br/>
-<img src='Zoo.png'>red"
+html_legend <- "<img src = 'https://drive.google.com/thumbnail?id=1RLYlQxoFoAzrdLcId-wZdDFqsZ9751KM' height='20' width='20'>Block <br/> <img src = 'https://drive.google.com/thumbnail?id=1FrKZx2CBM_ejsFRYXpg39-dWGVjd8TfG' height='20' width='20'>Cemetery <br/> <img src = 'https://drive.google.com/thumbnail?id=1nkbGqW-Hth9EuK-W0qknYRcfsH65JKKc' height='20' width='20'>Community <br/> <img src = 'https://drive.google.com/thumbnail?id=1-Vcwbd2EmNGm_oBu488hZg7cpUbSCbSb' height='20' width='20'>Golf Course <br/> <img src = 'https://drive.google.com/thumbnail?id=1SlEI6UZ2X9jKNvfxhmUSBEQgxPZNRNwv' height='20' width='20'>Memorial <br/> <img src='https://drive.google.com/thumbnail?id=1Masz0fderVFlcLN_bjS7RHDDDebkerd6' height='20' width='20'>Neighboorhood <br/> <img src = 'https://drive.google.com/thumbnail?id=1-UGYwT3g5XN0GhZGutCIndfQ0XbQ_ZLg' height='20' width='20'>Special <br/> <img src = 'https://drive.google.com/thumbnail?id=1IP8ieSyNkVQdsHwH3UTkOHokPzar61lb' height='20' width='20'>Zoo "
 
 #Generate the Popup text
 parkLocDf.spatial$Popup_Text <- paste("Park Name: ", parkLocDf.spatial$Park_Name, "<br>",
@@ -51,7 +51,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                 
                 titlePanel("Project - Data Visualisation"),
                 
-                navlistPanel(
+                navbarPage(
                     "Header",
                     tabPanel("Tyler's Page",
                              h3("This is the first panel")
@@ -72,7 +72,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                  
                                  # Show a plot of the generated distribution
                                  mainPanel(
-                                     leafletOutput("leafLetPlot")
+                                     leafletOutput("leafLetPlot", width = "100%", height = 600)
                                  )
                              ) #end of sidebar layout
                     ),
@@ -126,9 +126,19 @@ server <- function(input, output) {
                 addTiles()  %>% 
                 addPolygons(data = staticMapDf %>% 
                                 filter(Outcome_St == input$abanType), 
-                            popup = ~Outcome_St) 
+                            popup = ~Outcome_St)
         }
     })
+    
+    # observe({
+    #     map <- leafletProxy("leafLetPlot") %>% 
+    #         clearControls()
+    #     
+    #     if (input$park) {
+    #         map <- map %>%
+    #             addControl(html = html_legend, 
+    #                        position = "bottomleft") }
+    # })
 }
 
 # Run the application 
