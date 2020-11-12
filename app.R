@@ -4,6 +4,7 @@ library(leaflet)
 library(sf)
 library(tidyverse)
 library(RColorBrewer)
+library(DT)
 
 ## GLOBAL VARIABLES/DATA
 #Import the Abandoned Property File
