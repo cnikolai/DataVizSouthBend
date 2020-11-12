@@ -3,6 +3,7 @@ library(shinythemes)
 library(leaflet)
 library(sf)
 library(tidyverse)
+library(RColorBrewer)
 
 ## GLOBAL VARIABLES/DATA
 abandoned.properties <- st_read("Abandoned_Property_Parcels/Abandoned_Property_Parcels.shp", stringsAsFactors = FALSE)
@@ -19,10 +20,10 @@ code.outcome.names <- code.outcome.names[-5]
 
 schools.types <- unique(schools$SchoolType)
 pal <- colorFactor(topo.colors(5), code.outcome.names)
-school.pal <- colorFactor(topo.colors(2), schools.types)
+school.pal <- colorFactor(c("#9b4a11","Red"), schools.types)
 
 #Generate the Popup text for abandoned properties
-abandoned.properties$Popup_Text <- paste("<b>Property Name: ", paste(abandoned.properties$Direction, abandoned.properties$Street_Nam, abandoned.properties$Suffix, sep = " "), "</b><br>",
+abandoned.properties$Popup_Text <- paste("<b>Property Name: ", paste(ifelse(is.na(abandoned.properties$Direction),"",abandoned.properties$Direction), abandoned.properties$Street_Nam, abandoned.properties$Suffix, sep = " "), "</b><br>",
                                       "Code Enforcement: ", abandoned.properties$Code_Enfor, sep=" ")
 #Generate the Popup text for schools
 schools$Popup_Text <- paste("<b>School Name: ", schools$School, "</b><br>",
@@ -144,13 +145,22 @@ server <- function(input, output) {
     })
     output$code.outcome.map <- renderLeaflet({
         leaflet() %>%
+            setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
             addTiles()%>%
-            addPolygons(data = abandoned.properties, popup = ~Popup_Text,color = ~pal(properties.subset()$Outcome_St)) %>%
-            addPolygons(data = schools, popup = ~Popup_Text, color = ~school.pal(schools.subset()$SchoolType))# %>%
-            # addLegend("bottomright", pal = ~pal(properties.subset()$Outcome_St), values = code.outcome.names,
-            #           title = "Code Enforcement Legend",
-            #           opacity = 1
-            # )
+            addPolygons(data = abandoned.properties, 
+                        popup = ~Popup_Text,
+                        color = ~pal(properties.subset()$Outcome_St)) %>%
+            addPolygons(data = schools, 
+                        popup = ~Popup_Text, 
+                        color = ~school.pal(schools.subset()$SchoolType)) %>%
+            addLegend("bottomright", pal = pal, values = code.outcome.names,
+                  title = "Code Enforcement Legend",
+                  opacity = 1
+            ) %>%
+            addLegend("bottomright", pal = school.pal, values = schools.types,
+                      title = "School Type Legend",
+                      opacity = 1
+            )
     })
     
     #AVISEK'S CODE
