@@ -26,7 +26,7 @@ code.outcome.names <- code.outcome.names[-5]
 
 schools.types <- unique(schools$SchoolType)
 pal <- colorFactor(topo.colors(5), code.outcome.names)
-school.pal <- colorFactor(topo.colors(2), schools.types)
+school.pal <- colorFactor(c("#8c742b","#fc9803"), schools.types)
 
 #Generate the Popup text for abandoned properties
 abandoned.properties$Popup_Text <- paste("<b>Property Name: ", paste(abandoned.properties$Direction, abandoned.properties$Street_Nam, abandoned.properties$Suffix, sep = " "), "</b><br>",
