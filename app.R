@@ -14,10 +14,8 @@ schools <- st_read("School_Boundaries/School_Boundaries.shp", stringsAsFactors =
 ## CINDY'S CODE - START
 abandoned.properties.no.nas <- abandoned.properties
 code.outcome.names <- unique(abandoned.properties.no.nas$Outcome_St)
-code.outcome.names
 schools.no.nas <- schools
 schools.types <- unique(schools.no.nas$SchoolType)
-schools.types
 pal <- colorFactor(topo.colors(5), code.outcome.names)
 school.pal <- colorFactor(topo.colors(2), schools.types)
 
@@ -50,7 +48,7 @@ parkIcons <- iconList(
 )
 
 #Assign the Icon
-parkLocDf.spatial['icon'] <- sapply(strsplit(parkLocDf.spatial$Park_Type," "), `[`, 1)
+parkLocDf.spatial['icon'] <- sapply(strsplit(as.character(parkLocDf.spatial$Park_Type)," "), `[`, 1)
 
 html_legend <- "<img src = 'https://drive.google.com/thumbnail?id=1RLYlQxoFoAzrdLcId-wZdDFqsZ9751KM' height='20' width='20'>Block <br/> <img src = 'https://drive.google.com/thumbnail?id=1FrKZx2CBM_ejsFRYXpg39-dWGVjd8TfG' height='20' width='20'>Cemetery <br/> <img src = 'https://drive.google.com/thumbnail?id=1nkbGqW-Hth9EuK-W0qknYRcfsH65JKKc' height='20' width='20'>Community <br/> <img src = 'https://drive.google.com/thumbnail?id=1-Vcwbd2EmNGm_oBu488hZg7cpUbSCbSb' height='20' width='20'>Golf Course <br/> <img src = 'https://drive.google.com/thumbnail?id=1SlEI6UZ2X9jKNvfxhmUSBEQgxPZNRNwv' height='20' width='20'>Memorial <br/> <img src='https://drive.google.com/thumbnail?id=1Masz0fderVFlcLN_bjS7RHDDDebkerd6' height='20' width='20'>Neighboorhood <br/> <img src = 'https://drive.google.com/thumbnail?id=1-UGYwT3g5XN0GhZGutCIndfQ0XbQ_ZLg' height='20' width='20'>Special <br/> <img src = 'https://drive.google.com/thumbnail?id=1IP8ieSyNkVQdsHwH3UTkOHokPzar61lb' height='20' width='20'>Zoo "
 
@@ -131,14 +129,17 @@ ui <- fluidPage(theme = shinytheme("flatly"),
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     #CINDY'S CODE
-    code.subset <- reactive({
+    properties.subset <- reactive({
         return(abandoned.properties[abandoned.properties$Outcome_St %in% input$code.outcome,])
+    })
+    schools.subset <- reactive({
+        return(schools[schools$schools.types %in% input$schools.types,])
     })
     output$code.outcome.map <- renderLeaflet({
         leaflet()%>%
             addTiles()%>%
-            addPolygons(data = abandoned.properties, color = ~pal(code.subset()$Outcome_St)) 
-        #addPolygons(data = schools, color = ~school.pal(code.subset()))
+            addPolygons(data = abandoned.properties, color = ~pal(properties.subset()$Outcome_St)) %>%
+            addPolygons(data = schools, color = ~school.pal(schools.subset()$schools.types))
     })
     
     #AVISEK'S CODE

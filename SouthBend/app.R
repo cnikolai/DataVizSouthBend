@@ -57,8 +57,8 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                         choiceNames = NULL, 
                                         choiceValues = NULL),
                      checkboxGroupInput(inputId = "schools.types",
-                                        label = "School",
-                                        choices = c("Private", "publuc"))
+                                        label = "Select a School Type",
+                                        choices = c("Public", "Private"))
                      ), #end sidebarPanel
                      # checkboxGroupInput(inputId = "schools.types", label = "Select a School Type", choices = schools.types, selected = NULL,
                      #                  inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL)
