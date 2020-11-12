@@ -11,14 +11,25 @@ parks <- read.csv("Public_Facilities.csv")
 code.enforcement <- read.csv("Code_Enforcement_Cases.csv")
 schools <- st_read("School_Boundaries/School_Boundaries.shp", stringsAsFactors = FALSE)
 
+## ===========================================================================================================
+
 ## CINDY'S CODE - START
-abandoned.properties.no.nas <- abandoned.properties
-code.outcome.names <- unique(abandoned.properties.no.nas$Outcome_St)
-schools.no.nas <- schools
-schools.types <- unique(schools.no.nas$SchoolType)
+code.outcome.names <- unique(abandoned.properties$Outcome_St) 
+code.outcome.names <- code.outcome.names[-5]
+
+schools.types <- unique(schools$SchoolType)
 pal <- colorFactor(topo.colors(5), code.outcome.names)
 school.pal <- colorFactor(topo.colors(2), schools.types)
-schools[schools$SchoolType %in% schools.types,]
+
+#Generate the Popup text for abandoned properties
+abandoned.properties$Popup_Text <- paste("<b>Property Name: ", paste(abandoned.properties$Direction, abandoned.properties$Street_Nam, abandoned.properties$Suffix, sep = " "), "</b><br>",
+                                      "Code Enforcement: ", abandoned.properties$Code_Enfor, sep=" ")
+#Generate the Popup text for schools
+schools$Popup_Text <- paste("<b>School Name: ", schools$School, "</b><br>",
+                                         "School Type: ", schools$SchoolType, sep=" ")
+## CINDY's CODE END
+
+## ===========================================================================================================
 
 ##AVISEK'S CODE - START
 staticMapDf <- st_read("Abandoned_Property_Parcels/Abandoned_Property_Parcels.shp",
@@ -58,6 +69,9 @@ parkLocDf.spatial$Popup_Text <- paste("Park Name: ", parkLocDf.spatial$Park_Name
 
 ##AVISEK'S CODE - END
 
+## ===========================================================================================================
+
+##########  UI 
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("flatly"), 
@@ -92,30 +106,23 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                     tabPanel("Ben's Page",
                              h3("This is the third panel")
                     ),
-                    tabPanel("Cindy's Page",
-                             # Sidebar with a slider input for number of bins 
+                    tabPanel("Abandoned Properties & Schools",
                              sidebarLayout(
                                  sidebarPanel(
-                                     #checkboxInput(inputId = "code.outcome",
-                                     #             label = "Code Outcome 1", value = FALSE, width = NULL)
                                      checkboxGroupInput(inputId = "code.outcome", 
                                                         label = "Select a Code Outcome", 
                                                         choices = code.outcome.names, 
-                                                        selected = NULL, 
+                                                        selected = code.outcome.names, 
                                                         inline = FALSE,
                                                         width = NULL, 
                                                         choiceNames = NULL, 
                                                         choiceValues = NULL),
                                      checkboxGroupInput(inputId = "schools.types",
                                                         label = "Select a School Type",
-                                                        choices = schools.types)
+                                                        choices = schools.types, 
+                                                        selected = schools.types)
                                  ), #end sidebarPanel
-                                 # checkboxGroupInput(inputId = "schools.types", label = "Select a School Type", choices = schools.types, selected = NULL,
-                                 #                  inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL)
-                                 
-                                 
-                                 
-                                 # Show a plot of the generated distribution
+                                 # Show a leaflet map
                                  mainPanel(
                                      leafletOutput(outputId = "code.outcome.map")
                                  )
@@ -124,7 +131,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                 )
 )
 
-
+##########  SERVER 
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
@@ -136,10 +143,14 @@ server <- function(input, output) {
         return(schools[schools$SchoolType %in% input$schools.types,])
     })
     output$code.outcome.map <- renderLeaflet({
-        leaflet()%>%
+        leaflet() %>%
             addTiles()%>%
-            addPolygons(data = abandoned.properties, color = ~pal(properties.subset()$Outcome_St)) %>%
-            addPolygons(data = schools, color = ~school.pal(schools.subset()$SchoolType))
+            addPolygons(data = abandoned.properties, popup = ~Popup_Text,color = ~pal(properties.subset()$Outcome_St)) %>%
+            addPolygons(data = schools, popup = ~Popup_Text, color = ~school.pal(schools.subset()$SchoolType))# %>%
+            # addLegend("bottomright", pal = ~pal(properties.subset()$Outcome_St), values = code.outcome.names,
+            #           title = "Code Enforcement Legend",
+            #           opacity = 1
+            # )
     })
     
     #AVISEK'S CODE
@@ -178,6 +189,8 @@ server <- function(input, output) {
     #                        position = "bottomleft") }
     # })
 }
+
+##########  APP
 
 # Run the application 
 shinyApp(ui = ui, server = server)
