@@ -18,7 +18,7 @@ schools.no.nas <- schools
 schools.types <- unique(schools.no.nas$SchoolType)
 pal <- colorFactor(topo.colors(5), code.outcome.names)
 school.pal <- colorFactor(topo.colors(2), schools.types)
-
+schools[schools$SchoolType %in% schools.types,]
 
 ##AVISEK'S CODE - START
 staticMapDf <- st_read("Abandoned_Property_Parcels/Abandoned_Property_Parcels.shp",
@@ -107,8 +107,8 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                         choiceNames = NULL, 
                                                         choiceValues = NULL),
                                      checkboxGroupInput(inputId = "schools.types",
-                                                        label = "School",
-                                                        choices = c("Private", "publuc"))
+                                                        label = "Select a School Type",
+                                                        choices = schools.types)
                                  ), #end sidebarPanel
                                  # checkboxGroupInput(inputId = "schools.types", label = "Select a School Type", choices = schools.types, selected = NULL,
                                  #                  inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL)
@@ -133,13 +133,13 @@ server <- function(input, output) {
         return(abandoned.properties[abandoned.properties$Outcome_St %in% input$code.outcome,])
     })
     schools.subset <- reactive({
-        return(schools[schools$schools.types %in% input$schools.types,])
+        return(schools[schools$SchoolType %in% input$schools.types,])
     })
     output$code.outcome.map <- renderLeaflet({
         leaflet()%>%
             addTiles()%>%
             addPolygons(data = abandoned.properties, color = ~pal(properties.subset()$Outcome_St)) %>%
-            addPolygons(data = schools, color = ~school.pal(schools.subset()$schools.types))
+            addPolygons(data = schools, color = ~school.pal(schools.subset()$SchoolType))
     })
     
     #AVISEK'S CODE
