@@ -58,6 +58,54 @@ parkLocDf.spatial$Popup_Text <- paste("Park Name: ", parkLocDf.spatial$Park_Name
 
 ##AVISEK'S CODE - END
 
+## Tyler's CODE - START
+#Fix Bulb Type
+street.lights$Bulb_Type <- street.lights$Bulb_Type %>% str_replace("^(Yellow)?[-\\s]*[hH][\\s\\.]*[pP][\\s\\.]*S[op]dium[\\s]*$","Yellow - H.P. Sodium")
+street.lights$Bulb_Type <- street.lights$Bulb_Type %>% str_replace("HP[sS]","Yellow - H.P. Sodium")
+street.lights$Bulb_Type <- street.lights$Bulb_Type %>% str_replace("^$","Unknown")
+
+#Fix Service Type
+street.lights$Service <- street.lights$Service %>% str_replace("^[\\s]*$","Unknown")
+
+#Fix Ownership
+street.lights$Ownership <- street.lights$Ownership %>% str_replace("^[\\s]*$","Unknown")
+
+#Fix Lumens
+street.lights$LumensClass <- street.lights$Lumens
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("^9500$","K")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("^50000$","D")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("[\\s]?-.*$","")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("^$","Unknown")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_to_title()
+
+street.lights$Lumens <- street.lights$Lumens %>% str_replace("^[a-zA-Z\\-\\s]*","")
+street.lights$Lumens <- street.lights$Lumens %>% str_replace("[\\s]?L.*$","")
+street.lights$Lumens <- street.lights$Lumens %>% str_replace(",","")
+street.lights$Lumens <- street.lights$Lumens %>% str_replace("^$","50000")
+street.lights$Lumens <- street.lights$Lumens %>% as.integer()
+
+street.lights$LumensClass <- paste(street.lights$LumensClass,street.lights$Lumens,sep=" - ")
+
+street.lights.spatial <- street.lights %>%
+    st_as_sf(coords = c("Lon","Lat")) %>%
+    st_set_crs(value = 4326)
+
+#Generate a Distance matrix between Abandoned Property and Streetlights
+# abandoned.properties_street.lights_distances <- st_distance(
+#     abandoned.properties$geometry,
+#     streetLights.spatial$geometry,
+# )
+# abandoned.properties_street.lights_closest <- data.frame(distance=integer())
+# for (i in 1:dim(property_lights.distance)[1]) {
+#     abandoned.properties_street.lights_closest <- rbind(
+#         abandoned.properties_street.lights_closest,
+#         data.frame(distance=min(abandoned.properties_street.lights_distances[i,]))
+#     )
+# }
+# abandoned.properties$nearestStreetLight <- abandoned.properties_street.lights_closest$distance
+
+## Tyler's CODE - END
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("flatly"), 
