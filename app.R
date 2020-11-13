@@ -115,9 +115,10 @@ street.lights$Lumens <- street.lights$Lumens %>% str_replace("^[a-zA-Z\\-\\s]*",
 street.lights$Lumens <- street.lights$Lumens %>% str_replace("[\\s]?L.*$","")
 street.lights$Lumens <- street.lights$Lumens %>% str_replace(",","")
 street.lights$Lumens <- street.lights$Lumens %>% str_replace("^$","50000")
+street.lights$Lumens <- street.lights$Lumens %>% str_replace("^500000$","50000")
 street.lights$Lumens <- street.lights$Lumens %>% as.integer()
 
-street.lights$LumensClass <- paste(street.lights$LumensClass,street.lights$Lumens,sep=" - ")
+street.lights$LumensClass <- paste(street.lights$LumensClass," (",street.lights$Lumens,")",sep="")
 
 street.lights.lumens.name <- unique(street.lights$LumensClass)
 
