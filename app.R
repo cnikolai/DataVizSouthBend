@@ -85,6 +85,52 @@ names(distanceDf) <- c(c(1:1511), 'Park_Name', 'Park_Type')
 
 ## ===========================================================================================================
 
+## TYLER's CODE - START
+
+## ===========================================================================================================
+
+# Clean up street.lights
+
+#Fix Bulb Type
+street.lights$Bulb_Type <- street.lights$Bulb_Type %>% str_replace("^(Yellow)?[-\\s]*[hH][\\s\\.]*[pP][\\s\\.]*S[op]dium[\\s]*$","Yellow - H.P. Sodium")
+street.lights$Bulb_Type <- street.lights$Bulb_Type %>% str_replace("HP[sS]","Yellow - H.P. Sodium")
+street.lights$Bulb_Type <- street.lights$Bulb_Type %>% str_replace("^$","Unknown")
+
+#Fix Service Type
+street.lights$Service <- street.lights$Service %>% str_replace("^[\\s]*$","Unknown")
+
+#Fix Ownership
+street.lights$Ownership <- street.lights$Ownership %>% str_replace("^[\\s]*$","Unknown")
+
+#Fix Lumens
+street.lights$LumensClass <- street.lights$Lumens
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("^9500$","K")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("^50000$","D")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("[\\s]?-.*$","")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_replace("^$","Unknown")
+street.lights$LumensClass <- street.lights$LumensClass %>% str_to_title()
+
+
+street.lights$Lumens <- street.lights$Lumens %>% str_replace("^[a-zA-Z\\-\\s]*","")
+street.lights$Lumens <- street.lights$Lumens %>% str_replace("[\\s]?L.*$","")
+street.lights$Lumens <- street.lights$Lumens %>% str_replace(",","")
+street.lights$Lumens <- street.lights$Lumens %>% str_replace("^$","50000")
+street.lights$Lumens <- street.lights$Lumens %>% as.integer()
+
+street.lights$LumensClass <- paste(street.lights$LumensClass,street.lights$Lumens,sep=" - ")
+
+street.lights.lumens.name <- unique(street.lights$LumensClass)
+
+
+street.lights.spatial <- street.lights %>%
+  st_as_sf(coords = c("Lon","Lat")) %>%
+  st_set_crs(value = 4326)
+
+
+## ===========================================================================================================
+
+## TYLER's CODE - END
+
 ##########  UI 
 
 # Define UI for application that draws a histogram
@@ -94,9 +140,32 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                 
                 navbarPage(
                   "Header",
-                  tabPanel("Tyler's Page",
-                           h3("This is the first panel")
-                  ),
+                  tabPanel("Abandoned Properties & Streetlights", #Tyler's Page
+                            titlePanel("Streetlights of South Bend, IN"),
+                           sidebarLayout(
+                             sidebarPanel(
+                               checkboxGroupInput(
+                                 inputId = "streetlights.lumens",
+                                 label = "Select Streetlight Brightness",
+                                 choices = street.lights.lumens.name,
+                                 selected = street.lights.lumens.name #select all by default,
+                               ), # End checkboxGroupInput for streetlights.lumens
+                               checkboxGroupInput(inputId = "code.outcome", 
+                                                  label = "Select a Code Outcome", 
+                                                  choices = code.outcome.names, 
+                                                  selected = code.outcome.names, 
+                                                  inline = FALSE,
+                                                  width = NULL, 
+                                                  choiceNames = NULL, 
+                                                  choiceValues = NULL
+                                ) # End checkboxGroupInput for code outcome
+                             ), # End SidebarPanel
+                             mainPanel(
+                               leafletOutput(outputId = "streetsLeaflet")
+                             )
+                           ) # End SidebarLayout
+                           
+                  ), # End Tyler's Page
                   tabPanel("Abandoned Property & Parks",
                            # Application title
                            titlePanel("Abandoned Property in Southbend, IN"),
@@ -300,6 +369,39 @@ server <- function(input, output) {
   })
   
   #AVISEK'S CODE - End
+  
+  #TYLER'S CODE - START
+  observe({
+    streetlights.lumens <- input$streetlights.lumens
+    code.outcome <- input$code.outcome
+    
+    output$streetsLeaflet <- renderLeaflet({
+      leaflet() %>%
+        setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+        addProviderTiles(providers$Stamen.TonerLite) %>%
+        addPolygons(
+          weight=1,
+          # layerId = abandoned.properties$geometry,
+          # group = abandoned.properties$Code_Enfor,
+          data = abandoned.properties %>% 
+            filter(Outcome_St %in% code.outcome)
+        ) %>% addCircles(
+          stroke = 0,
+          fillOpacity = 0.2,
+          radius = ~ sqrt(Lumens/20),
+          color = "green",
+          group = street.lights.spatial$LumensClass,
+          data = street.lights.spatial %>% 
+            filter(LumensClass %in% streetlights.lumens) 
+        )# %>%
+        # addLayersControl(
+        #   overlayGroups = c(
+        #     street.lights.spatial$LumensClass
+        #   ),
+        #   options = layersControlOptions(collapsed = F)
+        # )
+    })
+  })
   
 
 }
