@@ -254,7 +254,6 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                              )
                            ) # End SidebarLayout
                   ), # Ben's Page - End
-                  ),
                   tabPanel("Abandoned Properties & Schools",
                            sidebarLayout(
                              sidebarPanel(
