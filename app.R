@@ -42,8 +42,8 @@ schools$Popup_Text <- paste("<b>School Name: ", schools$School, "</b><br>",
 
 #Replace the missing values
 abandoned.properties$Outcome_St <- ifelse(is.na(abandoned.properties$Outcome_St), 
-                                 "No Category Yet", 
-                                 abandoned.properties$Outcome_St)
+                                          "No Category Yet", 
+                                          abandoned.properties$Outcome_St)
 
 #Import the Park Locations File
 parkLocDf.points <- read.csv("Parks_Locations_and_Features.csv")
@@ -142,7 +142,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                 navbarPage(
                   "Header",
                   tabPanel("Abandoned Properties & Streetlights", #Tyler's Page
-                            titlePanel("Streetlights of South Bend, IN"),
+                           titlePanel("Streetlights of South Bend, IN"),
                            sidebarLayout(
                              sidebarPanel(
                                checkboxGroupInput(
@@ -159,7 +159,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   width = NULL, 
                                                   choiceNames = NULL, 
                                                   choiceValues = NULL
-                                ) # End checkboxGroupInput for code outcome
+                               ) # End checkboxGroupInput for code outcome
                              ), # End SidebarPanel
                              mainPanel(
                                leafletOutput(outputId = "streetsLeaflet")
@@ -183,16 +183,16 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                                  selected = "All Parks"),
                                                      conditionalPanel(condition = "input.park == 1 & 
                                                            input.overlayType == 'Selected Park'",
-                                                            shinydashboard::box(width = 12, 
-                                                                title = "Select Park Name & Distance",
-                                                                  selectInput("parkName", "Park Name", 
-                                                                              choices = parkLocDf.spatial$Park_Name,
-                                                                              selected = NULL),
-                                                                  sliderInput(inputId = "distance", 
-                                                                               label = "Distance in Miles", 
-                                                                               min = 1, max = 40, 
-                                                                               value = 10),
-                                                                               htmlOutput("parkDetails")
+                                                                      shinydashboard::box(width = 12, 
+                                                                                          title = "Select Park Name & Distance",
+                                                                                          selectInput("parkName", "Park Name", 
+                                                                                                      choices = parkLocDf.spatial$Park_Name,
+                                                                                                      selected = NULL),
+                                                                                          sliderInput(inputId = "distance", 
+                                                                                                      label = "Distance in Miles", 
+                                                                                                      min = 1, max = 40, 
+                                                                                                      value = 10),
+                                                                                          htmlOutput("parkDetails")
                                                                       )
                                                      )# End of Condition panel
                                     )# End of Condition panel
@@ -236,33 +236,33 @@ ui <- fluidPage(theme = shinytheme("flatly"),
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-    #CINDY'S CODE
-    properties.subset <- reactive({
-        return(abandoned.properties[abandoned.properties$Outcome_St %in% input$code.outcome,])
-    })
-    schools.subset <- reactive({
-        return(schools[schools$SchoolType %in% input$schools.types,])
-    })
-    output$code.outcome.map <- renderLeaflet({
-        leaflet() %>%
-            setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-            addTiles()%>%
-            addPolygons(data = abandoned.properties, 
-                        popup = ~Popup_Text,
-                        color = ~pal(properties.subset()$Outcome_St)) %>%
-            addPolygons(data = schools, 
-                        popup = ~Popup_Text, 
-                        color = ~school.pal(schools.subset()$SchoolType)) %>%
-            addLegend("bottomright", pal = pal, values = code.outcome.names,
-                      title = "Code Enforcement Legend",
-                      opacity = 1
-            ) %>%
-            addLegend("bottomright", pal = school.pal, values = schools.types,
-                      title = "School Type Legend",
-                      opacity = 1
-            )
-    })
-    
+  #CINDY'S CODE
+  properties.subset <- reactive({
+    return(abandoned.properties[abandoned.properties$Outcome_St %in% input$code.outcome,])
+  })
+  schools.subset <- reactive({
+    return(schools[schools$SchoolType %in% input$schools.types,])
+  })
+  output$code.outcome.map <- renderLeaflet({
+    leaflet() %>%
+      setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+      addTiles()%>%
+      addPolygons(data = abandoned.properties, 
+                  popup = ~Popup_Text,
+                  color = ~pal(properties.subset()$Outcome_St)) %>%
+      addPolygons(data = schools, 
+                  popup = ~Popup_Text, 
+                  color = ~school.pal(schools.subset()$SchoolType)) %>%
+      addLegend("bottomright", pal = pal, values = code.outcome.names,
+                title = "Code Enforcement Legend",
+                opacity = 1
+      ) %>%
+      addLegend("bottomright", pal = school.pal, values = schools.types,
+                title = "School Type Legend",
+                opacity = 1
+      )
+  })
+  
   
   #AVISEK'S CODE - Start
   observe({
@@ -276,7 +276,7 @@ server <- function(input, output) {
     
     #Filter the Distance Data Frame
     modDistanceDf <- distanceDf[which(parkLocDf.spatial$Park_Name == park_name), ] %>% 
-      select(- c("Park_Name", "Park_Type"))
+      dplyr::select(- c("Park_Name", "Park_Type"))
     distanceVec <- as.numeric(modDistanceDf)
     names(distanceVec) <- c(1:1511)
     
@@ -326,7 +326,7 @@ server <- function(input, output) {
       if(overlay_type == 'All Parks') {
         data <- abandoned.properties %>%
           filter(Outcome_St == aban_type) %>% 
-          select(Outcome_St, Address_Nu, Street_Nam, Zip_Code) %>% 
+          dplyr::select(Outcome_St, Address_Nu, Street_Nam, Zip_Code) %>% 
           rename(Property_Type = Outcome_St,
                  Street_Num = Address_Nu,
                  Street_Name = Street_Nam) %>% 
@@ -334,7 +334,7 @@ server <- function(input, output) {
       }else{
         data<- selectedProp %>%
           filter(Outcome_St == aban_type) %>% 
-          select(Outcome_St, Address_Nu, Street_Nam, Zip_Code, Distance) %>% 
+          dplyr::select(Outcome_St, Address_Nu, Street_Nam, Zip_Code, Distance) %>% 
           rename(Property_Type = Outcome_St,
                  Street_Num = Address_Nu,
                  Street_Name = Street_Nam) %>% 
@@ -343,7 +343,7 @@ server <- function(input, output) {
     }else{
       data <- abandoned.properties %>%
         filter(Outcome_St == aban_type) %>% 
-        select(Outcome_St, Address_Nu, Street_Nam, Zip_Code) %>% 
+        dplyr::select(Outcome_St, Address_Nu, Street_Nam, Zip_Code) %>% 
         rename(Property_Type = Outcome_St,
                Street_Num = Address_Nu,
                Street_Name = Street_Nam) %>% 
@@ -358,7 +358,7 @@ server <- function(input, output) {
     
     park.data <-  parkLocDf.spatial %>%
       filter(Park_Name == park_name) %>% 
-      select(Park_Name, Park_Type, Address)
+      dplyr::select(Park_Name, Park_Type, Address)
     
     output$parkDetails <- renderUI({ 
       str1 <- paste0("Park Name: ", park.data$Park_Name)
@@ -395,16 +395,16 @@ server <- function(input, output) {
           data = street.lights.spatial %>% 
             filter(LumensClass %in% streetlights.lumens) 
         )# %>%
-        # addLayersControl(
-        #   overlayGroups = c(
-        #     street.lights.spatial$LumensClass
-        #   ),
-        #   options = layersControlOptions(collapsed = F)
-        # )
+      # addLayersControl(
+      #   overlayGroups = c(
+      #     street.lights.spatial$LumensClass
+      #   ),
+      #   options = layersControlOptions(collapsed = F)
+      # )
     })
   })
   
-
+  
 }
 
 ##########  APP
