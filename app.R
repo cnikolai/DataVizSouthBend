@@ -132,6 +132,33 @@ street.lights.spatial <- street.lights %>%
 
 ## TYLER's CODE - END
 
+## ===========================================================================================================
+
+## BEN'S CODE - START
+
+# Limit data to no older than 2013, to match abandoned property data.
+# Select the Code violations most closely related to homes
+small_code <- code.enforcement %>% 
+  filter(Case_Year>=13) %>% 
+  filter(Case_Type_Code_Description=='HOUSING REPAIR' | 
+           Case_Type_Code_Description=='ENVIRONMENTAL MOWING' | 
+           Case_Type_Code_Description=='ZONING VIOLATIONS')
+
+# Create spacial data and assign coordinates
+code.enforcement.spatial <- small_code %>%
+  st_as_sf(coords  = c("Lon","Lat"))%>%
+  st_set_crs(value = 4326)
+
+# Create color palettes
+pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type_Code_Description)
+pal2 <- colorFactor(palette = 'Set2', domain =abandoned.properties$Outcome_St)
+
+code.violation.type <- unique(code.enforcement.spatial$Case_Type_Code_Description)
+abandoned.outcome <- unique(abandoned.properties$Outcome_St)
+
+## BEN'S CODE - END
+
+## ===========================================================================================================
 ##########  UI 
 
 # Define UI for application that draws a histogram
@@ -203,8 +230,30 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                              ) #End of Second Column
                            ) #end of Row
                   ),
-                  tabPanel("Ben's Page",
-                           h3("This is the third panel")
+                  tabPanel("Abandoned Properties & Code Violations", # Ben's Page - Start
+                           sidebarLayout(
+                             sidebarPanel(
+                               checkboxGroupInput(
+                                 inputId = "code.violation.type",
+                                 label = "Select Code Violation",
+                                 choices = code.violation.type,
+                                 selected = code.violation.type #select all by default,
+                               ), # End checkboxGroupInput for code violations
+                               checkboxGroupInput(inputId = "abandoned.outcome", 
+                                                  label = "Select an Abandonment Outcome", 
+                                                  choices = abandoned.outcome, 
+                                                  selected = abandoned.outcome, 
+                                                  inline = FALSE,
+                                                  width = NULL, 
+                                                  choiceNames = NULL, 
+                                                  choiceValues = NULL
+                               ) # End checkboxGroupInput for abandoned outcome
+                             ), # End SidebarPanel
+                             mainPanel(
+                               leafletOutput(outputId = "codesLeaflet")
+                             )
+                           ) # End SidebarLayout
+                  ), # Ben's Page - End
                   ),
                   tabPanel("Abandoned Properties & Schools",
                            sidebarLayout(
@@ -403,7 +452,33 @@ server <- function(input, output) {
       # )
     })
   })
-  
+
+  # BEN'S CODE - START
+  observe({
+    code.type <- input$code.violation.type
+    abandon <- input$abandoned.outcome
+    
+    output$codesLeaflet <- renderLeaflet({
+      leaflet()  %>%
+        addTiles()  %>%
+        addCircleMarkers(data = code.enforcement.spatial %>% 
+                           filter(Case_Type_Code_Description %in% code.type), 
+                         color = ~pal1(Case_Type_Code_Description), 
+                         stroke = 0, 
+                         fillOpacity = 1, 
+                         radius = 2) %>% 
+        addPolygons(data = abandoned.properties %>% 
+                      filter(Outcome_St %in% abandon), 
+                    color = ~pal2(Outcome_St)) %>% 
+        addLegend("bottomright", pal = pal1, values = code.enforcement.spatial$Case_Type_Code_Description,
+                  title = "Code Enforcement Legend",
+                  opacity = 1) %>% 
+        addLegend("bottomright", pal = pal2, values = abandoned.properties$Outcome_St,
+                  title = "Abandoned Property Legend",
+                  opacity = 1)
+    })
+  })
+  # BEN'S CODE - END
   
 }
 
