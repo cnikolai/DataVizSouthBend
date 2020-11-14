@@ -154,9 +154,16 @@ code.enforcement.spatial <- small_code %>%
 # Create color palettes
 pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type_Code_Description)
 pal2 <- colorFactor(palette = 'Set2', domain =abandoned.properties$Outcome_St)
+pal3 <- colorFactor(palette = 'Set3', domain =council$Council_Me)
+
+# Create City Council name popup
+council$popup <- paste("<b>",council$Council_Me,"</b><br>",
+                       "District: ",council$Dist,"<br>")
+
 
 code.violation.type <- unique(code.enforcement.spatial$Case_Type_Code_Description)
 abandoned.outcome <- unique(abandoned.properties$Outcome_St)
+council.dist <- unique(council$Dist)
 
 ## BEN'S CODE - END
 
@@ -249,7 +256,11 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   width = NULL, 
                                                   choiceNames = NULL, 
                                                   choiceValues = NULL
-                               ) # End checkboxGroupInput for abandoned outcome
+                               ),# End checkboxGroupInput for abandoned outcome
+                               checkboxGroupInput(inputId = "council.dist",
+                                                  label = "Select a City Council District",
+                                                  choices = council.dist, 
+                                                  selected = council.dist) 
                              ), # End SidebarPanel
                              mainPanel(
                                leafletOutput(outputId = "codesLeaflet")
@@ -458,6 +469,7 @@ server <- function(input, output) {
   observe({
     code.type <- input$code.violation.type
     abandon <- input$abandoned.outcome
+    council_in <- input$council.dist
     
     output$codesLeaflet <- renderLeaflet({
       leaflet()  %>%
@@ -471,6 +483,10 @@ server <- function(input, output) {
         addPolygons(data = abandoned.properties %>% 
                       filter(Outcome_St %in% abandon), 
                     color = ~pal2(Outcome_St)) %>% 
+        addPolygons(data = council %>% 
+                      filter(Dist %in% council_in), 
+                    color = ~pal3(council.dist),
+                    popup = ~popup) %>% 
         addLegend("bottomright", pal = pal1, values = code.enforcement.spatial$Case_Type_Code_Description,
                   title = "Code Enforcement Legend",
                   opacity = 1) %>% 
