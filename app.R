@@ -17,6 +17,8 @@ parkLocDf.points <- read.csv("Parks_Locations_and_Features.csv")
 code.enforcement <- read.csv("Code_Enforcement_Cases.csv")
 #Import the School Data
 schools <- st_read("School_Boundaries/School_Boundaries.shp", stringsAsFactors = FALSE)
+#Import City Council Data
+council <- st_read("City_Council_Districts/City_Council_Districts.shp", stringsAsFactors = FALSE)
 
 ## ===========================================================================================================
 
