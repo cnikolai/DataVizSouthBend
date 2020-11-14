@@ -353,23 +353,33 @@ server <- function(input, output) {
             addTiles()  %>%
             # addMarkers(data = abandoned.properties %>% st_centroid(), popup = ~Outcome_St )
             addPolygons(data = abandoned.properties %>%
-                          filter(Outcome_St == input$abanType),
+                        filter(Outcome_St == input$abanType),
+                        color = ~pal2(Outcome_St),
                         popup = ~Outcome_St) %>%
             addMarkers(data = parkLocDf.spatial,
                        popup = ~Popup_Text,
                        icon = ~parkIcons[icon])  %>%
-            addControl(html = html_legend, position = "bottomleft")
+            addControl(html = html_legend, position = "bottomleft") %>% 
+            addLegend("bottomright", pal = pal2, 
+                      values = abandoned.properties$Outcome_St,
+                      title = "Abandoned Property Legend",
+                      opacity = 1)
         }else{
           leaflet()  %>%
             addTiles()  %>%
             addPolygons(data = selectedProp %>%
-                          filter(Outcome_St == input$abanType),
+                        filter(Outcome_St == input$abanType),
+                        color = ~pal2(Outcome_St),
                         popup = ~Outcome_St) %>%
             addMarkers(data = parkLocDf.spatial %>%
-                         filter(Park_Name == park_name),
+                       filter(Park_Name == park_name),
                        popup = ~Popup_Text,
                        icon = ~parkIcons[icon])  %>%
-            addControl(html = html_legend, position = "bottomleft")
+            addControl(html = html_legend, position = "bottomleft") %>% 
+            addLegend("bottomright", pal = pal2, 
+                      values = abandoned.properties$Outcome_St,
+                      title = "Abandoned Property Legend",
+                      opacity = 1)
         }
         
       } else{
@@ -377,8 +387,13 @@ server <- function(input, output) {
         leaflet()  %>% 
           addTiles()  %>% 
           addPolygons(data = abandoned.properties %>% 
-                        filter(Outcome_St == aban_type), 
-                      popup = ~Outcome_St)
+                      filter(Outcome_St == aban_type), 
+                      color = ~pal2(Outcome_St),
+                      popup = ~Outcome_St) %>% 
+          addLegend("bottomright", pal = pal2, 
+                  values = abandoned.properties$Outcome_St,
+                  title = "Abandoned Property Legend",
+                  opacity = 1)
       }
     })
     
@@ -464,7 +479,7 @@ server <- function(input, output) {
       # )
     })
   })
-
+  
   # BEN'S CODE - START
   observe({
     code.type <- input$code.violation.type
