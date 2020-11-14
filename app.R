@@ -154,7 +154,7 @@ code.enforcement.spatial <- small_code %>%
 # Create color palettes
 pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type_Code_Description)
 pal2 <- colorFactor(palette = 'Set2', domain =abandoned.properties$Outcome_St)
-pal3 <- colorFactor(palette = 'Set3', domain =council$Council_Me)
+pal3 <- colorFactor(palette = "Accent", domain =council$Council_Me)
 
 # Create City Council name popup
 council$popup <- paste("<b>",council$Council_Me,"</b><br>",
