@@ -27,7 +27,6 @@ code.outcome.names <- unique(abandoned.properties$Outcome_St)
 code.outcome.names <- code.outcome.names[-5]
 
 schools.types <- unique(schools$SchoolType)
-pal <- colorFactor(topo.colors(5), code.outcome.names)
 school.pal <- colorFactor(c("#8c742b","#fc9803"), schools.types)
 #council.pal <- colorFactor("#8bbded")
 
@@ -155,7 +154,7 @@ code.enforcement.spatial <- small_code %>%
 
 # Create color palettes
 pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type_Code_Description)
-pal2 <- colorFactor(palette = 'Set2', domain =abandoned.properties$Outcome_St)
+pal2 <- colorFactor(palette = 'Dark2', domain =abandoned.properties$Outcome_St)
 pal3 <- colorFactor(palette = "Accent", domain =council$Council_Me)
 
 # Create City Council name popup
@@ -175,7 +174,7 @@ council.dist <- unique(council$Dist)
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("flatly"), 
                 
-                titlePanel("Project - Data Visualization"),
+                titlePanel("South Bend Abandoned Properties"),
                 
                 navbarPage(
                   "Header",
@@ -275,7 +274,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                # fluidRow(
                                #   column(3,
                                checkboxGroupInput(inputId = "code.outcome", 
-                                                  label = "Select a Code Outcome", 
+                                                  label = "Type of Abandoned Property", 
                                                   choices = code.outcome.names, 
                                                   selected = code.outcome.names, 
                                                   ),
@@ -326,11 +325,12 @@ server <- function(input, output) {
         addTiles()%>%
         addPolygons(data = abandoned.properties, 
                     popup = ~Popup_Text,
-                    color = ~pal(properties.subset()$Outcome_St)) %>%
+                    color = ~pal2(properties.subset()$Outcome_St)) %>%
         addPolygons(data = schools, 
                     popup = ~Popup_Text, 
                     color = ~school.pal(schools.subset()$SchoolType)) %>%
-        addPolygons(data = council 
+        addPolygons(data = council,
+                    fillOpacity = 0.2
                     #color = ~council.pal(council.subset()$CouncilDist)
         ) %>%
         addLegend("bottomright", pal = pal2, values = code.outcome.names,
@@ -347,7 +347,7 @@ server <- function(input, output) {
       addTiles()%>%
       addPolygons(data = abandoned.properties, 
                   popup = ~Popup_Text,
-                  color = ~pal(properties.subset()$Outcome_St)) %>%
+                  color = ~pal2(properties.subset()$Outcome_St)) %>%
       addPolygons(data = schools, 
                   popup = ~Popup_Text, 
                   color = ~school.pal(schools.subset()$SchoolType)) %>%
