@@ -27,8 +27,8 @@ code.outcome.names <- unique(abandoned.properties$Outcome_St)
 code.outcome.names <- code.outcome.names[-5]
 
 schools.types <- unique(schools$SchoolType)
-school.pal <- colorFactor(c("#8c742b","#fc9803"), schools.types)
-#council.pal <- colorFactor("#8bbded")
+school.pal <- colorFactor(c("#fac125","#7d5f0b"), schools.types)
+council.pal <- colorFactor("#828b99",council$Dist)
 
 
 #Generate the Popup text for abandoned properties
@@ -273,13 +273,13 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                              sidebarPanel(
                                # fluidRow(
                                #   column(3,
-                               checkboxGroupInput(inputId = "code.outcome", 
+                               checkboxGroupInput(inputId = "code.outcome2", 
                                                   label = "Type of Abandoned Property", 
                                                   choices = code.outcome.names, 
                                                   selected = code.outcome.names, 
                                                   ),
                                checkboxGroupInput(inputId = "schools.types",
-                                                  label = "Select a School Type",
+                                                  label = "School Type",
                                                   choices = schools.types, 
                                                   selected = schools.types),
                                checkboxInput(inputId = "citydistricts", "Overlay City Districts"),
@@ -304,44 +304,44 @@ server <- function(input, output) {
   
   #CINDY'S CODE
   properties.subset <- reactive({
-    return(abandoned.properties[abandoned.properties$Outcome_St %in% input$code.outcome,])
+    return(abandoned.properties[abandoned.properties$Outcome_St %in% input$code.outcome2,])
   })
   schools.subset <- reactive({
     return(schools[schools$SchoolType %in% input$schools.types,])
   })
   # council.subset <- reactive({
-  #   return(council[council$SchoolType %in% input$schools.types,])
+  #   return(council[council$Dist %in% input$council,])
   # })
-  
+
   observe({
     
     #Capture the Inputs
     city_districts <- input$citydistricts
     
   output$code.outcome.map <- renderLeaflet({
-    if(city_districts){
-        leaflet() %>%
-        setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-        addTiles()%>%
-        addPolygons(data = abandoned.properties, 
-                    popup = ~Popup_Text,
-                    color = ~pal2(properties.subset()$Outcome_St)) %>%
-        addPolygons(data = schools, 
-                    popup = ~Popup_Text, 
-                    color = ~school.pal(schools.subset()$SchoolType)) %>%
-        addPolygons(data = council,
-                    fillOpacity = 0.2
-                    #color = ~council.pal(council.subset()$CouncilDist)
-        ) %>%
-        addLegend("bottomright", pal = pal2, values = code.outcome.names,
-                  title = "Abandoned Property Legend",
-                  opacity = 1
-        ) %>%
-        addLegend("bottomright", pal = school.pal, values = schools.types,
-                  title = "School Type Legend",
-                  opacity = 1
-        )
-    }else{
+   if(city_districts){
+       leaflet() %>%
+       setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+       addTiles()%>%
+       addPolygons(data = abandoned.properties,
+                   popup = ~Popup_Text,
+                   color = ~pal2(properties.subset()$Outcome_St)) %>%
+       addPolygons(data = schools,
+                   popup = ~Popup_Text,
+                   color = ~school.pal(schools.subset()$SchoolType)) %>%
+       addPolygons(data = council,
+                   fillOpacity = 0.2,
+                   color = ~council.pal(council.dist)
+       ) %>%
+       addLegend("bottomright", pal = pal2, values = code.outcome.names,
+                 title = "Abandoned Property Legend",
+                 opacity = 1
+       ) %>%
+       addLegend("bottomright", pal = school.pal, values = schools.types,
+                 title = "School Type Legend",
+                 opacity = 1
+       )
+   }else{
     leaflet() %>%
       setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
       addTiles()%>%
@@ -359,7 +359,7 @@ server <- function(input, output) {
                 title = "School Type Legend",
                 opacity = 1
       )
-    }
+    }# end else
   })
   }) #end observe
   
