@@ -592,6 +592,8 @@ server <- function(input, output, session) {
   observe({
     abandon <- input$abandoned.outcome
     council_in <- input$council.dist
+    council_len <- dim(abandoned.properties %>% 
+                      filter(Outcome_St %in% abandon))[1]
     
     # Start Leaflet
     output$codesLeaflet <- renderLeaflet({
@@ -616,7 +618,8 @@ server <- function(input, output, session) {
       filter(Outcome_St %in% abandon & Name %in% council_in) %>%
       st_set_geometry(NULL) %>%
       group_by(Name) %>%
-      summarize(`Abandonded Property Count` = n())
+      summarize(`Abandonded Property Count` = n()) %>% 
+      mutate(`Percent of Total` = `Abandonded Property Count`/council_len)
     
     output$councilTable <- DT::renderDataTable (
       council_table, rownames = NULL, width = 200, height = 200,
