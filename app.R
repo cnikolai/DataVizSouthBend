@@ -177,7 +177,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                 titlePanel("South Bend Abandoned Properties"),
                 
                 navbarPage(
-                  "Header",
+                  "",
                   tabPanel("Abandoned Properties & Streetlights", #Tyler's Page
                            titlePanel("Streetlights of South Bend, IN"),
                            sidebarLayout(
