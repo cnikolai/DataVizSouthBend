@@ -165,7 +165,7 @@ code.enforcement.spatial <- small_code %>%
 # Create color palettes
 pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type_Code_Description)
 pal2 <- colorFactor(palette = 'Dark2', domain =abandoned.properties$Outcome_St)
-pal3 <- colorFactor(palette = "Accent", domain =council$Council_Me)
+pal3 <- colorFactor(palette = c('goldenrod', 'darkorchid', 'blue', 'orangered', 'deeppink','slategray'), domain=council$Name)
 
 colors <- c('goldenrod', 'darkorchid', 'blue', 'orangered', 'deeppink','slategray')
 
@@ -259,8 +259,8 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                            ) #end of Row
                   ),
                   tabPanel("Abandoned Properties & Code Violations", # Ben's Page - Start
-                           sidebarLayout(
-                             sidebarPanel(
+                           fluidRow(
+                             column(3,
                                checkboxGroupInput(inputId = "abandoned.outcome", 
                                                   label = "Select an Abandonment Outcome", 
                                                   choices = abandoned.outcome, 
@@ -275,7 +275,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   choices = council.dist, 
                                                   selected = council.dist) 
                              ), # End SidebarPanel
-                             mainPanel(
+                             column(9,
                                leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600),
                                plotlyOutput(outputId = "councilPlotly")
                              )
@@ -578,13 +578,14 @@ server <- function(input, output, session) {
     output$codesLeaflet <- renderLeaflet({
       leaflet()  %>%
         setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-        addTiles()  %>%
+        addProviderTiles(providers$Stamen.TonerLite) %>%
         addPolygons(data = abandoned.properties %>% 
                       filter(Outcome_St %in% abandon), 
                     color = ~pal2(Outcome_St)) %>% 
         addPolygons(data = council %>% 
                     filter(Name %in% council_in), 
-                    color = colors,
+                    color = ~pal3(Name),
+                    fillOpacity = 0.05,
                     popup = ~popup) %>% 
         addLegend("bottomright", pal = pal2, values = abandoned.properties$Outcome_St,
                   title = "Abandoned Property Legend",
