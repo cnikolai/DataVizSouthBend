@@ -182,7 +182,7 @@ council.properties <- st_join(x = abandoned.properties, y = council %>% select(N
 # Create lists of unique values for filtering
 code.violation.type <- unique(code.enforcement.spatial$Case_Type_Code_Description)
 abandoned.outcome <- unique(abandoned.properties$Outcome_St)
-council.dist <- unique(council$Name)
+council.dist <- unique(council.properties$Name)
 
 ## BEN'S CODE - END
 
@@ -565,16 +565,16 @@ server <- function(input, output, session) {
   
   # BEN'S CODE - START
   observe({
-    code.type <- input$code.violation.type
     abandon <- input$abandoned.outcome
     council_in <- input$council.dist
     
-    # plot <- council.properties %>% 
-    #   filter(Outcome_St %in% abandon & Name %in% council_in)
-    #   st_set_geometry(NULL) %>% 
-    #   group_by(District = Name) %>% 
-    #   summarize(properties = n())
+    plot <- council.properties %>%
+      filter(Outcome_St %in% abandon & Name %in% council_in) %>% 
+      st_set_geometry(NULL) %>%
+      group_by(District = Name) %>%
+      summarize(properties = n())
     
+    # Start Leaflet
     output$codesLeaflet <- renderLeaflet({
       leaflet()  %>%
         setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
@@ -589,7 +589,26 @@ server <- function(input, output, session) {
         addLegend("bottomright", pal = pal2, values = abandoned.properties$Outcome_St,
                   title = "Abandoned Property Legend",
                   opacity = 1)
-    })
+    }) # End Leaflet
+    
+    # Start Plotly
+    output$council.Plotly <- renderPlotly({
+      fig <- plot_ly(plot, labels = ~District, values = ~properties, type = 'pie',
+                     textposition = 'inside',
+                     textinfo = 'label+percent',
+                     insidetextfont = list(color = '#FFFFFF'),
+                     hoverinfo = 'text',
+                     text = ~paste(properties, ' Properties'),
+                     marker = list(colors = colors,
+                                   line = list(color = '#FFFFFF', width = 1)),
+                     showlegend = FALSE)
+      fig <- fig %>% layout(title = 'Properties by City Council District',
+                            xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+      
+      show(fig)
+    }) # End Plotly
+    
   })
   # BEN'S CODE - END
   
