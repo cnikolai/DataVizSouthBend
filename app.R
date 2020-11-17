@@ -166,7 +166,7 @@ code.enforcement.spatial <- small_code %>%
 # Create color palettes
 pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type_Code_Description)
 pal2 <- colorFactor(palette = 'Dark2', domain =abandoned.properties$Outcome_St)
-pal3 <- colorFactor(palette = c('goldenrod', 'darkorchid', 'blue', 'orangered', 'deeppink','slategray'), domain=council$Name)
+pal3 <- colorFactor(palette = 'Accent', domain=council$Name)
 
 colors <- c('goldenrod', 'darkorchid', 'blue', 'orangered', 'deeppink','slategray')
 
@@ -259,7 +259,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                              ) #End of Second Column
                            ) #end of Row
                   ),
-                  tabPanel("Abandoned Properties & Code Violations", # Ben's Page - Start
+                  tabPanel("City Council Districts", # Ben's Page - Start
                            fluidRow(
                              column(3,
                                checkboxGroupInput(inputId = "abandoned.outcome", 
@@ -596,7 +596,7 @@ server <- function(input, output, session) {
     plot <- council.properties %>%
       filter(Outcome_St %in% abandon & Name %in% council_in) %>% 
       st_set_geometry(NULL) %>%
-      group_by(District = Name) %>%
+      group_by(Name) %>%
       summarize(properties = n())
     
     # Start Leaflet
@@ -609,8 +609,8 @@ server <- function(input, output, session) {
                     color = ~pal2(Outcome_St)) %>% 
         addPolygons(data = council %>% 
                     filter(Name %in% council_in), 
-                    color = ~pal3(Name),
-                    fillOpacity = 0.05,
+                    color = ~pal2(Name),
+                    fillOpacity = 0.04,
                     popup = ~popup) %>% 
         addLegend("bottomright", pal = pal2, values = abandoned.properties$Outcome_St,
                   title = "Abandoned Property Legend",
@@ -619,7 +619,7 @@ server <- function(input, output, session) {
     
     # Start Plotly
     output$council.Plotly <- renderPlotly({
-      plot_ly(plot, labels = ~District, values = ~properties, type = 'pie',
+      plot_ly(plot, labels = ~Name, values = ~properties, type = 'pie',
                textposition = 'inside',
                textinfo = 'label+percent',
                insidetextfont = list(color = '#FFFFFF'),
