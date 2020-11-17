@@ -282,7 +282,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   label = "School Type",
                                                   choices = schools.types, 
                                                   selected = schools.types),
-                               checkboxInput(inputId = "citydistricts", "Overlay City Districts"),
+                               checkboxInput(inputId = "citydistricts", "Overlay City Districts")
                              ), #end sidebarPanel
                              # Show a leaflet map
                                # )),
