@@ -5,6 +5,7 @@ library(sf)
 library(tidyverse)
 library(RColorBrewer)
 library(DT)
+library(plotly)
 
 ## GLOBAL VARIABLES/DATA
 #setwd("/Users/cindy/Documents/ND MS Data Science/Data Viz/DataVizSouthBend")
