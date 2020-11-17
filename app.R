@@ -167,7 +167,7 @@ pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type
 pal2 <- colorFactor(palette = 'Dark2', domain =abandoned.properties$Outcome_St)
 pal3 <- colorFactor(palette = "Accent", domain =council$Council_Me)
 
-colors <- c('rgb(211,94,96)', 'rgb(128,133,133)', 'rgb(144,103,167)', 'rgb(171,104,87)', 'rgb(114,147,203)')
+colors <- c('goldenrod', 'darkorchid', 'blue', 'orangered', 'deeppink','slategray')
 
 # Create City Council name popup
 council$popup <- paste("<b>",council$Council_Me,"</b><br>",
