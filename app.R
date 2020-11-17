@@ -7,6 +7,7 @@ library(RColorBrewer)
 library(DT)
 
 ## GLOBAL VARIABLES/DATA
+#setwd("/Users/cindy/Documents/ND MS Data Science/Data Viz/DataVizSouthBend")
 #Import the Abandoned Property File
 abandoned.properties <- st_read("Abandoned_Property_Parcels/Abandoned_Property_Parcels.shp", stringsAsFactors = FALSE)
 #Import the Street Lights File
@@ -40,6 +41,12 @@ schools$Popup_Text <- paste("<b>School Name: ", schools$School, "</b><br>",
 
 #Generate the Popup text for districts
 council$Popup_Text <- paste("<b>District Name: ", council$Dist, "</b><br>")
+
+#Dropdown menu
+selectedSchool <- sort(schools$School, decreasing = FALSE)
+  #arrange(toString(schools$School))
+  #sort(schools$School)
+
 ## CINDY's CODE END
 
 ## ===========================================================================================================
@@ -283,9 +290,12 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   ),
                                checkboxGroupInput(inputId = "schools.types",
                                                   label = "School Type",
-                                                  choices = schools.types, 
-                                                  selected = schools.types),
-                               checkboxInput(inputId = "citydistricts", "Overlay City Districts")
+                                                  choices = schools.types),
+                               checkboxInput(inputId = "citydistricts", "Overlay City Districts"),
+                               selectInput(inputId = "school.names", 
+                                           label = "School Name", 
+                                           choices = selectedSchool)
+                               #uiOutput("schoolnames")
                              ), #end sidebarPanel
                              # Show a leaflet map
                                # )),
@@ -303,14 +313,17 @@ ui <- fluidPage(theme = shinytheme("flatly"),
 ##########  SERVER 
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output, session) {
   
-  #CINDY'S CODE
+  ########################################     CINDY'S CODE
   properties.subset <- reactive({
     return(abandoned.properties[abandoned.properties$Outcome_St %in% input$code.outcome2,])
   })
   schools.subset <- reactive({
     return(schools[schools$SchoolType %in% input$schools.types,])
+  })
+  schools.subset.single <- reactive({
+    return(schools[schools$School %in% input$school.names,])
   })
   # council.subset <- reactive({
   #   return(council[council$Dist %in% input$council,])
@@ -363,9 +376,33 @@ server <- function(input, output) {
                 title = "School Type Legend",
                 opacity = 1
       )
+     
     }# end else
-  })
+    
+    
+    # #Datatable
+    # output$propertydata <- DT::renderDataTable (
+    #   data, rownames = NULL, width = 200, height = 200,
+    #   options = list(scrollX = TRUE, scrollY = TRUE)
+    # )
+  })#end render leaflet
   }) #end observe
+  observeEvent(input$school.names, {
+    #print("observe")
+    updateCheckboxGroupInput(session,"schools.types", selected = c("",""))
+    proxy <- leafletProxy("code.outcome.map")
+    proxy %>% clearShapes() 
+    proxy %>% addPolygons(data = abandoned.properties, 
+                          popup = ~Popup_Text,
+                          color = ~pal2(properties.subset()$Outcome_St))
+    proxy %>% addPolygons(data = schools %>% filter(schools$School == input$school.names), 
+                          popup = ~Popup_Text, 
+                          color = "#3693eb") 
+  })  
+  # output$schoolnames <- renderUI({
+  #   
+  #  
+  # }) #end renderUI
   
   
   #AVISEK'S CODE - Start
