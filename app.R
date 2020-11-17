@@ -593,20 +593,18 @@ server <- function(input, output, session) {
     
     # Start Plotly
     output$council.Plotly <- renderPlotly({
-      fig <- plot_ly(plot, labels = ~District, values = ~properties, type = 'pie',
-                     textposition = 'inside',
-                     textinfo = 'label+percent',
-                     insidetextfont = list(color = '#FFFFFF'),
-                     hoverinfo = 'text',
-                     text = ~paste(properties, ' Properties'),
-                     marker = list(colors = colors,
-                                   line = list(color = '#FFFFFF', width = 1)),
-                     showlegend = FALSE)
-      fig <- fig %>% layout(title = 'Properties by City Council District',
-                            xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-      
-      show(fig)
+      plot_ly(plot, labels = ~District, values = ~properties, type = 'pie',
+               textposition = 'inside',
+               textinfo = 'label+percent',
+               insidetextfont = list(color = '#FFFFFF'),
+               hoverinfo = 'text',
+               text = ~paste(properties, ' Properties'),
+               marker = list(colors = colors,
+                             line = list(color = '#FFFFFF', width = 1)),
+               showlegend = FALSE) %>% 
+        layout(title = 'Properties by City Council District',
+                xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
     }) # End Plotly
     
   })
