@@ -294,7 +294,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                checkboxInput(inputId = "citydistricts", "Overlay City Districts"),
                                selectInput(inputId = "school.names", 
                                            label = "School Name", 
-                                           choices = selectedSchool)
+                                           choices = c("Select One",selectedSchool))
                                #uiOutput("schoolnames")
                              ), #end sidebarPanel
                              # Show a leaflet map
@@ -348,8 +348,12 @@ server <- function(input, output, session) {
        addPolygons(data = council,
                    fillOpacity = 0.2,
                    popup = ~Popup_Text,
-                   color = ~council.pal(council.dist)
+                   color = ~council.pal(council.dist) 
        ) %>%
+       addPolygons(data = council,
+                   fillOpacity = 0.2,
+                   popup = ~Popup_Text,
+                   color = ~council.pal(council.dist)) %>%
        addLegend("bottomright", pal = pal2, values = code.outcome.names,
                  title = "Abandoned Property Legend",
                  opacity = 1
@@ -359,6 +363,29 @@ server <- function(input, output, session) {
                  opacity = 1
        )
    }else{
+     if(input$school.names != "Select One") {
+       leaflet() %>%
+         setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+         addTiles()%>%
+         addPolygons(data = abandoned.properties, 
+                     popup = ~Popup_Text,
+                     color = ~pal2(properties.subset()$Outcome_St)) %>%
+         addPolygons(data = schools, 
+                     popup = ~Popup_Text, 
+                     color = ~school.pal(schools.subset()$SchoolType)) %>%
+         addLegend("bottomright", pal = pal2, values = code.outcome.names,
+                   title = "Abandoned Property Legend",
+                   opacity = 1
+         ) %>%
+         addLegend("bottomright", pal = school.pal, values = schools.types,
+                   title = "School Type Legend",
+                   opacity = 1
+         ) %>%
+       addPolygons(data = schools %>% filter(schools$School == input$school.names), 
+                   popup = ~Popup_Text, 
+                   color = "#3693eb") 
+     }#end if
+     else {
     leaflet() %>%
       setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
       addTiles()%>%
@@ -377,16 +404,11 @@ server <- function(input, output, session) {
                 opacity = 1
       )
      
+     }#end else
     }# end else
-    
-    
-    # #Datatable
-    # output$propertydata <- DT::renderDataTable (
-    #   data, rownames = NULL, width = 200, height = 200,
-    #   options = list(scrollX = TRUE, scrollY = TRUE)
-    # )
   })#end render leaflet
   }) #end observe
+  
   observeEvent(input$school.names, {
     #print("observe")
     updateCheckboxGroupInput(session,"schools.types", selected = c("",""))
@@ -398,12 +420,14 @@ server <- function(input, output, session) {
     proxy %>% addPolygons(data = schools %>% filter(schools$School == input$school.names), 
                           popup = ~Popup_Text, 
                           color = "#3693eb") 
-  })  
-  # output$schoolnames <- renderUI({
-  #   
-  #  
-  # }) #end renderUI
-  
+    if(input$citydistricts) {
+        proxy %>% addPolygons(data = council,
+                          fillOpacity = 0.2,
+                          popup = ~Popup_Text,
+                          color = ~council.pal(council.dist)
+        )#end add polygons
+    }#end if statement
+  }) #end observe event 
   
   #AVISEK'S CODE - Start
   observe({
