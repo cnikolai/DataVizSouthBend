@@ -618,14 +618,14 @@ server <- function(input, output, session) {
     }) # End Leaflet
     
     # Start Plotly
-    output$council.Plotly <- renderPlotly({
+    output$councilPlotly <- renderPlotly({
       plot_ly(plot, labels = ~Name, values = ~properties, type = 'pie',
                textposition = 'inside',
                textinfo = 'label+percent',
                insidetextfont = list(color = '#FFFFFF'),
                hoverinfo = 'text',
                text = ~paste(properties, ' Properties'),
-               marker = list(colors = colors,
+               marker = list(colors = pal3,
                              line = list(color = '#FFFFFF', width = 1)),
                showlegend = FALSE) %>% 
         layout(title = 'Properties by City Council District',
