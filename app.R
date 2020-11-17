@@ -167,14 +167,22 @@ pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type
 pal2 <- colorFactor(palette = 'Dark2', domain =abandoned.properties$Outcome_St)
 pal3 <- colorFactor(palette = "Accent", domain =council$Council_Me)
 
+colors <- c('rgb(211,94,96)', 'rgb(128,133,133)', 'rgb(144,103,167)', 'rgb(171,104,87)', 'rgb(114,147,203)')
+
 # Create City Council name popup
 council$popup <- paste("<b>",council$Council_Me,"</b><br>",
                        "District: ",council$Dist,"<br>")
 
+# Concatenate District number with Councilmen
+council$Name <- paste(council$Dist,council$Council_Me,sep="-")
 
+# Join abandoned properties with city council districts
+council.properties <- st_join(x = abandoned.properties, y = council %>% select(Name))
+
+# Create lists of unique values for filtering
 code.violation.type <- unique(code.enforcement.spatial$Case_Type_Code_Description)
 abandoned.outcome <- unique(abandoned.properties$Outcome_St)
-council.dist <- unique(council$Dist)
+council.dist <- unique(council$Name)
 
 ## BEN'S CODE - END
 
@@ -253,12 +261,6 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                   tabPanel("Abandoned Properties & Code Violations", # Ben's Page - Start
                            sidebarLayout(
                              sidebarPanel(
-                               checkboxGroupInput(
-                                 inputId = "code.violation.type",
-                                 label = "Select Code Violation",
-                                 choices = code.violation.type,
-                                 selected = code.violation.type #select all by default,
-                               ), # End checkboxGroupInput for code violations
                                checkboxGroupInput(inputId = "abandoned.outcome", 
                                                   label = "Select an Abandonment Outcome", 
                                                   choices = abandoned.outcome, 
@@ -274,7 +276,8 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   selected = council.dist) 
                              ), # End SidebarPanel
                              mainPanel(
-                               leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600)
+                               leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600),
+                               plotlyOutput(outputId = "councilPlotly")
                              )
                            ) # End SidebarLayout
                   ), # Ben's Page - End
@@ -566,25 +569,23 @@ server <- function(input, output, session) {
     abandon <- input$abandoned.outcome
     council_in <- input$council.dist
     
+    # plot <- council.properties %>% 
+    #   filter(Outcome_St %in% abandon & Name %in% council_in)
+    #   st_set_geometry(NULL) %>% 
+    #   group_by(District = Name) %>% 
+    #   summarize(properties = n())
+    
     output$codesLeaflet <- renderLeaflet({
       leaflet()  %>%
+        setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
         addTiles()  %>%
-        addCircleMarkers(data = code.enforcement.spatial %>% 
-                           filter(Case_Type_Code_Description %in% code.type), 
-                         color = ~pal1(Case_Type_Code_Description), 
-                         stroke = 0, 
-                         fillOpacity = 1, 
-                         radius = 2) %>% 
         addPolygons(data = abandoned.properties %>% 
                       filter(Outcome_St %in% abandon), 
                     color = ~pal2(Outcome_St)) %>% 
         addPolygons(data = council %>% 
-                      filter(Dist %in% council_in), 
-                    color = ~pal3(council.dist),
+                    filter(Name %in% council_in), 
+                    color = colors,
                     popup = ~popup) %>% 
-        addLegend("bottomright", pal = pal1, values = code.enforcement.spatial$Case_Type_Code_Description,
-                  title = "Code Enforcement Legend",
-                  opacity = 1) %>% 
         addLegend("bottomright", pal = pal2, values = abandoned.properties$Outcome_St,
                   title = "Abandoned Property Legend",
                   opacity = 1)
