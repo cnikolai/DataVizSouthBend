@@ -264,7 +264,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   selected = council.dist) 
                              ), # End SidebarPanel
                              mainPanel(
-                               leafletOutput(outputId = "codesLeaflet")
+                               leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600)
                              )
                            ) # End SidebarLayout
                   ), # Ben's Page - End
