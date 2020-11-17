@@ -165,16 +165,24 @@ code.enforcement.spatial <- small_code %>%
 # Create color palettes
 pal1 <- colorFactor(palette = 'Set1', domain =code.enforcement.spatial$Case_Type_Code_Description)
 pal2 <- colorFactor(palette = 'Dark2', domain =abandoned.properties$Outcome_St)
-pal3 <- colorFactor(palette = "Accent", domain =council$Council_Me)
+pal3 <- colorFactor(palette = c('goldenrod', 'darkorchid', 'blue', 'orangered', 'deeppink','slategray'), domain=council$Name)
+
+colors <- c('goldenrod', 'darkorchid', 'blue', 'orangered', 'deeppink','slategray')
 
 # Create City Council name popup
 council$popup <- paste("<b>",council$Council_Me,"</b><br>",
                        "District: ",council$Dist,"<br>")
 
+# Concatenate District number with Councilmen
+council$Name <- paste(council$Dist,council$Council_Me,sep="-")
 
+# Join abandoned properties with city council districts
+council.properties <- st_join(x = abandoned.properties, y = council %>% select(Name))
+
+# Create lists of unique values for filtering
 code.violation.type <- unique(code.enforcement.spatial$Case_Type_Code_Description)
 abandoned.outcome <- unique(abandoned.properties$Outcome_St)
-council.dist <- unique(council$Dist)
+council.dist <- unique(council.properties$Name)
 
 ## BEN'S CODE - END
 
@@ -251,14 +259,8 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                            ) #end of Row
                   ),
                   tabPanel("Abandoned Properties & Code Violations", # Ben's Page - Start
-                           sidebarLayout(
-                             sidebarPanel(
-                               checkboxGroupInput(
-                                 inputId = "code.violation.type",
-                                 label = "Select Code Violation",
-                                 choices = code.violation.type,
-                                 selected = code.violation.type #select all by default,
-                               ), # End checkboxGroupInput for code violations
+                           fluidRow(
+                             column(3,
                                checkboxGroupInput(inputId = "abandoned.outcome", 
                                                   label = "Select an Abandonment Outcome", 
                                                   choices = abandoned.outcome, 
@@ -273,8 +275,9 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   choices = council.dist, 
                                                   selected = council.dist) 
                              ), # End SidebarPanel
-                             mainPanel(
-                               leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600)
+                             column(9,
+                               leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600),
+                               plotlyOutput(outputId = "councilPlotly")
                              )
                            ) # End SidebarLayout
                   ), # Ben's Page - End
@@ -586,33 +589,49 @@ server <- function(input, output, session) {
   
   # BEN'S CODE - START
   observe({
-    code.type <- input$code.violation.type
     abandon <- input$abandoned.outcome
     council_in <- input$council.dist
     
+    plot <- council.properties %>%
+      filter(Outcome_St %in% abandon & Name %in% council_in) %>% 
+      st_set_geometry(NULL) %>%
+      group_by(District = Name) %>%
+      summarize(properties = n())
+    
+    # Start Leaflet
     output$codesLeaflet <- renderLeaflet({
       leaflet()  %>%
-        addTiles()  %>%
-        addCircleMarkers(data = code.enforcement.spatial %>% 
-                           filter(Case_Type_Code_Description %in% code.type), 
-                         color = ~pal1(Case_Type_Code_Description), 
-                         stroke = 0, 
-                         fillOpacity = 1, 
-                         radius = 2) %>% 
+        setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+        addProviderTiles(providers$Stamen.TonerLite) %>%
         addPolygons(data = abandoned.properties %>% 
                       filter(Outcome_St %in% abandon), 
                     color = ~pal2(Outcome_St)) %>% 
         addPolygons(data = council %>% 
-                      filter(Dist %in% council_in), 
-                    color = ~pal3(council.dist),
+                    filter(Name %in% council_in), 
+                    color = ~pal3(Name),
+                    fillOpacity = 0.05,
                     popup = ~popup) %>% 
-        addLegend("bottomright", pal = pal1, values = code.enforcement.spatial$Case_Type_Code_Description,
-                  title = "Code Enforcement Legend",
-                  opacity = 1) %>% 
         addLegend("bottomright", pal = pal2, values = abandoned.properties$Outcome_St,
                   title = "Abandoned Property Legend",
                   opacity = 1)
-    })
+    }) # End Leaflet
+    
+    # Start Plotly
+    output$council.Plotly <- renderPlotly({
+      plot_ly(plot, labels = ~District, values = ~properties, type = 'pie',
+               textposition = 'inside',
+               textinfo = 'label+percent',
+               insidetextfont = list(color = '#FFFFFF'),
+               hoverinfo = 'text',
+               text = ~paste(properties, ' Properties'),
+               marker = list(colors = colors,
+                             line = list(color = '#FFFFFF', width = 1)),
+               showlegend = FALSE) %>% 
+        layout(title = 'Properties by City Council District',
+                xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+    }) # End Plotly
+    
   })
   # BEN'S CODE - END
   
