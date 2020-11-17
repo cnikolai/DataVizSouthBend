@@ -5,7 +5,7 @@ library(sf)
 library(tidyverse)
 library(RColorBrewer)
 library(DT)
-library(plotly)
+
 
 ## GLOBAL VARIABLES/DATA
 #setwd("/Users/cindy/Documents/ND MS Data Science/Data Viz/DataVizSouthBend")
@@ -278,7 +278,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                              ), # End SidebarPanel
                              column(9,
                                leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600),
-                               plotlyOutput(outputId = "councilPlotly")
+                               dataTableOutput('councilTable')
                              )
                            ) # End SidebarLayout
                   ), # Ben's Page - End
@@ -593,12 +593,6 @@ server <- function(input, output, session) {
     abandon <- input$abandoned.outcome
     council_in <- input$council.dist
     
-    plot <- council.properties %>%
-      filter(Outcome_St %in% abandon & Name %in% council_in) %>% 
-      st_set_geometry(NULL) %>%
-      group_by(Name) %>%
-      summarize(properties = n())
-    
     # Start Leaflet
     output$codesLeaflet <- renderLeaflet({
       leaflet()  %>%
@@ -617,22 +611,17 @@ server <- function(input, output, session) {
                   opacity = 1)
     }) # End Leaflet
     
-    # Start Plotly
-    output$councilPlotly <- renderPlotly({
-      plot_ly(plot, labels = ~Name, values = ~properties, type = 'pie',
-               textposition = 'inside',
-               textinfo = 'label+percent',
-               insidetextfont = list(color = '#FFFFFF'),
-               hoverinfo = 'text',
-               text = ~paste(properties, ' Properties'),
-               marker = list(colors = pal3,
-                             line = list(color = '#FFFFFF', width = 1)),
-               showlegend = FALSE) %>% 
-        layout(title = 'Properties by City Council District',
-                xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-                yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-    }) # End Plotly
+    # Start Table
+    council_table <- council.properties %>%
+      filter(Outcome_St %in% abandon & Name %in% council_in) %>%
+      st_set_geometry(NULL) %>%
+      group_by(Name) %>%
+      summarize(`Abandonded Property Count` = n())
     
+    output$councilTable <- DT::renderDataTable (
+      council_table, rownames = NULL, width = 200, height = 200,
+      options = list(scrollX = TRUE, scrollY = TRUE)
+    ) # End table
   })
   # BEN'S CODE - END
   
