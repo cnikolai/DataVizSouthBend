@@ -609,7 +609,7 @@ server <- function(input, output, session) {
                     color = ~pal2(Outcome_St)) %>% 
         addPolygons(data = council %>% 
                     filter(Name %in% council_in), 
-                    color = ~pal2(Name),
+                    color = colors,
                     fillOpacity = 0.04,
                     popup = ~popup) %>% 
         addLegend("bottomright", pal = pal2, values = abandoned.properties$Outcome_St,
