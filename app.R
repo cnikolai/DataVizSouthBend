@@ -37,6 +37,9 @@ abandoned.properties$Popup_Text <- paste("<b>Property Name: ", ifelse(is.na(aban
 #Generate the Popup text for schools
 schools$Popup_Text <- paste("<b>School Name: ", schools$School, "</b><br>",
                             "School Type: ", schools$SchoolType, sep=" ")
+
+#Generate the Popup text for districts
+council$Popup_Text <- paste("<b>District Name: ", council$Dist, "</b><br>")
 ## CINDY's CODE END
 
 ## ===========================================================================================================
@@ -331,6 +334,7 @@ server <- function(input, output) {
                    color = ~school.pal(schools.subset()$SchoolType)) %>%
        addPolygons(data = council,
                    fillOpacity = 0.2,
+                   popup = ~Popup_Text,
                    color = ~council.pal(council.dist)
        ) %>%
        addLegend("bottomright", pal = pal2, values = code.outcome.names,
