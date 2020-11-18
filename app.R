@@ -5,7 +5,7 @@ library(sf)
 library(tidyverse)
 library(RColorBrewer)
 library(DT)
-
+library(scales)
 
 ## GLOBAL VARIABLES/DATA
 #setwd("/Users/cindy/Documents/ND MS Data Science/Data Viz/DataVizSouthBend")
@@ -617,9 +617,10 @@ server <- function(input, output, session) {
     council_table <- council.properties %>%
       filter(Outcome_St %in% abandon & Name %in% council_in) %>%
       st_set_geometry(NULL) %>%
-      group_by(Name) %>%
+      group_by(Outcome = Outcome_St, Name) %>%
       summarize(`Abandonded Property Count` = n()) %>% 
-      mutate(`Percent of Total` = `Abandonded Property Count`/council_len)
+      mutate(`Percent of Total` = percent(`Abandonded Property Count`/council_len)) %>% 
+      arrange(desc(`Abandonded Property Count`))
     
     output$councilTable <- DT::renderDataTable (
       council_table, rownames = NULL, width = 200, height = 200,
