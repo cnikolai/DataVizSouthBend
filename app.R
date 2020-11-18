@@ -136,12 +136,22 @@ street.lights$Lumens <- street.lights$Lumens %>% as.integer()
 street.lights$LumensClass <- paste(street.lights$LumensClass," (",street.lights$Lumens,")",sep="")
 
 street.lights.lumens.name <- unique(street.lights$LumensClass)
-
+street.lights.owners.name <- unique(street.lights$Ownership)
 
 street.lights.spatial <- street.lights %>%
   st_as_sf(coords = c("Lon","Lat")) %>%
   st_set_crs(value = 4326)
 
+# Add a popup for Number of Streetlights nearby
+abandoned.properties$Popup_Text_Streetlights <- paste(
+  "<b>Property Name: ", 
+  ifelse(is.na(abandoned.properties$Direction),paste(abandoned.properties$Street_Nam, abandoned.properties$Suffix, sep = " "),
+         paste(abandoned.properties$Direction, 
+               abandoned.properties$Street_Nam, 
+               abandoned.properties$Suffix, sep = " ")), 
+  "</b><br>",
+  "Code Enforcement: ", abandoned.properties$Code_Enfor, sep=" "
+  )
 
 ## ===========================================================================================================
 
@@ -198,31 +208,44 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                 
                 navbarPage(
                   "",
-                  tabPanel("Abandoned Properties & Streetlights", #Tyler's Page
-                           titlePanel("Streetlights of South Bend, IN"),
-                           sidebarLayout(
-                             sidebarPanel(
-                               checkboxGroupInput(
-                                 inputId = "streetlights.lumens",
-                                 label = "Select Streetlight Brightness",
-                                 choices = street.lights.lumens.name,
-                                 selected = street.lights.lumens.name #select all by default,
-                               ), # End checkboxGroupInput for streetlights.lumens
-                               checkboxGroupInput(inputId = "code.outcome", 
-                                                  label = "Select a Code Outcome", 
-                                                  choices = code.outcome.names, 
-                                                  selected = code.outcome.names, 
-                                                  inline = FALSE,
-                                                  width = NULL, 
-                                                  choiceNames = NULL, 
-                                                  choiceValues = NULL
-                               ) # End checkboxGroupInput for code outcome
-                             ), # End SidebarPanel
-                             mainPanel(
-                               leafletOutput(outputId = "streetsLeaflet")
-                             )
-                           ) # End SidebarLayout
-                           
+                  tabPanel("Streetlights", #Tyler's Page
+                           # titlePanel("Streetlights of South Bend, IN"),
+                           fluidRow(
+                             column(2,
+                                    checkboxGroupInput(inputId = "code.outcome", 
+                                                       label = "Type of Abandoned Property", 
+                                                       choices = code.outcome.names, 
+                                                       selected = code.outcome.names, 
+                                                       inline = FALSE,
+                                                       width = NULL, 
+                                                       choiceNames = NULL, 
+                                                       choiceValues = NULL
+                                    ),
+                                    # checkboxGroupInput(
+                                    #   inputId = "streetlights.lumens",
+                                    #   label = "Select Streetlight Brightness",
+                                    #   choices = street.lights.lumens.name,
+                                    #   selected = street.lights.lumens.name #select all by default,
+                                    # ), # End checkboxGroupInput for streetlights.lumens
+                                    checkboxGroupInput(
+                                      inputId = "streetlights.owners",
+                                      label = "Streetlight Ownership",
+                                      choices = street.lights.owners.name,
+                                      selected = street.lights.owners.name
+                                    ), #End checkboxGroupInput for Streetlight Owner
+                                    radioButtons(
+                                      inputId = "streetlight.proximity", 
+                                      label = "Proximity to Properties", 
+                                      choices = c("10"=10,"25"=25,"50"=50,"100"=100)
+                                      )
+                                    
+                             ), #End of Column 1
+                             column(10,
+                                    leafletOutput("streetsLeaflet", width = "100%", height = 600),
+                                    dataTableOutput("streetlightsData")
+                             ) # End of column 2
+                             
+                           )#End of FluidRow
                   ), # End Tyler's Page
                   tabPanel("Abandoned Property & Parks",
                            # Application title
@@ -558,8 +581,13 @@ server <- function(input, output, session) {
   
   #TYLER'S CODE - START
   observe({
-    streetlights.lumens <- input$streetlights.lumens
+    # streetlights.lumens <- input$streetlights.lumens
+    streetlights.owners <- input$streetlights.owners
     code.outcome <- input$code.outcome
+    
+    streetlightsData <- street.lights %>%
+      filter(Ownership %in% streetlights.owners) %>%
+      select(Pole_Number, Ownership, Address, LumensClass, Service, Wattage, Inspect_Date)
     
     output$streetsLeaflet <- renderLeaflet({
       leaflet() %>%
@@ -567,18 +595,22 @@ server <- function(input, output, session) {
         addProviderTiles(providers$Stamen.TonerLite) %>%
         addPolygons(
           weight=1,
-          # layerId = abandoned.properties$geometry,
-          # group = abandoned.properties$Code_Enfor,
+          color = ~pal2(Outcome_St),
+          popup = ~Popup_Text_Streetlights, 
           data = abandoned.properties %>% 
             filter(Outcome_St %in% code.outcome)
         ) %>% addCircles(
           stroke = 0,
-          fillOpacity = 0.2,
+          fillOpacity = 0.15,
           radius = ~ sqrt(Lumens/20),
           color = "green",
           group = street.lights.spatial$LumensClass,
-          data = street.lights.spatial %>% 
-            filter(LumensClass %in% streetlights.lumens) 
+          data = street.lights.spatial %>%
+            filter(Ownership %in% streetlights.owners)
+        ) %>% 
+        addLegend("bottomright", pal = pal2, values = code.outcome.names,
+                  title = "Abandoned Property Legend",
+                  opacity = 1
         )# %>%
       # addLayersControl(
       #   overlayGroups = c(
@@ -587,6 +619,12 @@ server <- function(input, output, session) {
       #   options = layersControlOptions(collapsed = F)
       # )
     })
+    
+    #Datatable
+    output$streetlightsData <- DT::renderDataTable (
+      streetlightsData, rownames = NULL, width = 200, height = 200,
+      options = list(scrollX = TRUE, scrollY = TRUE)
+    )
   })
   
   # BEN'S CODE - START
