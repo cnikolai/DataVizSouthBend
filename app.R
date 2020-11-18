@@ -45,8 +45,8 @@ council$Popup_Text <- paste("<b>District Name: ", council$Dist, "</b><br>")
 
 #Dropdown menu
 selectedSchool <- sort(schools$School, decreasing = FALSE)
-  #arrange(toString(schools$School))
-  #sort(schools$School)
+#arrange(toString(schools$School))
+#sort(schools$School)
 
 ## CINDY's CODE END
 
@@ -194,11 +194,11 @@ council.dist <- unique(council.properties$Name)
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("flatly"), 
                 
-                titlePanel("South Bend Abandoned Properties"),
+                titlePanel("Dashboard for Abandoned Properties and Other Facities in South Bend, IN"),
                 
                 navbarPage(
-                  "",
-                  tabPanel("Abandoned Properties & Streetlights", #Tyler's Page
+                  " ",
+                  tabPanel(" Abandoned Properties  and   || Streetlights || ", #Tyler's Page
                            titlePanel("Streetlights of South Bend, IN"),
                            sidebarLayout(
                              sidebarPanel(
@@ -209,7 +209,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                  selected = street.lights.lumens.name #select all by default,
                                ), # End checkboxGroupInput for streetlights.lumens
                                checkboxGroupInput(inputId = "code.outcome", 
-                                                  label = "Select a Code Outcome", 
+                                                  label = "Type of Abandoned Property", 
                                                   choices = code.outcome.names, 
                                                   selected = code.outcome.names, 
                                                   inline = FALSE,
@@ -224,9 +224,9 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                            ) # End SidebarLayout
                            
                   ), # End Tyler's Page
-                  tabPanel("Abandoned Property & Parks",
+                  tabPanel("|| Parks || ",
                            # Application title
-                           titlePanel("Abandoned Property in South Bend, IN"),
+                           titlePanel(" "),
                            fluidRow(
                              column(3,
                                     selectInput(inputId = "abanType", 
@@ -260,30 +260,30 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                              ) #End of Second Column
                            ) #end of Row
                   ),
-                  tabPanel("City Council Districts", # Ben's Page - Start
+                  tabPanel("|| City Council Districts || ", # Ben's Page - Start
                            fluidRow(
                              column(3,
-                               checkboxGroupInput(inputId = "abandoned.outcome", 
-                                                  label = "Select an Abandonment Outcome", 
-                                                  choices = abandoned.outcome, 
-                                                  selected = abandoned.outcome, 
-                                                  inline = FALSE,
-                                                  width = NULL, 
-                                                  choiceNames = NULL, 
-                                                  choiceValues = NULL
-                               ),# End checkboxGroupInput for abandoned outcome
-                               checkboxGroupInput(inputId = "council.dist",
-                                                  label = "Select a City Council District",
-                                                  choices = council.dist, 
-                                                  selected = council.dist) 
+                                    checkboxGroupInput(inputId = "abandoned.outcome", 
+                                                       label = "Type of Abandoned Property", 
+                                                       choices = abandoned.outcome, 
+                                                       selected = abandoned.outcome, 
+                                                       inline = FALSE,
+                                                       width = NULL, 
+                                                       choiceNames = NULL, 
+                                                       choiceValues = NULL
+                                    ),# End checkboxGroupInput for abandoned outcome
+                                    checkboxGroupInput(inputId = "council.dist",
+                                                       label = "Select a City Council District",
+                                                       choices = council.dist, 
+                                                       selected = council.dist) 
                              ), # End SidebarPanel
                              column(9,
-                               leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600),
-                               dataTableOutput('councilTable')
+                                    leafletOutput(outputId = "codesLeaflet", width = "100%", height = 600),
+                                    dataTableOutput('councilTable')
                              )
                            ) # End SidebarLayout
                   ), # Ben's Page - End
-                  tabPanel("Abandoned Properties & Schools",
+                  tabPanel("|| Schools ||",
                            sidebarLayout(
                              sidebarPanel(
                                # fluidRow(
@@ -292,7 +292,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                   label = "Type of Abandoned Property", 
                                                   choices = code.outcome.names, 
                                                   selected = code.outcome.names, 
-                                                  ),
+                               ),
                                checkboxGroupInput(inputId = "schools.types",
                                                   label = "School Type",
                                                   choices = schools.types),
@@ -303,13 +303,13 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                #uiOutput("schoolnames")
                              ), #end sidebarPanel
                              # Show a leaflet map
-                               # )),
+                             # )),
                              # fluidRow(
                              #   column(9,
                              mainPanel(
                                leafletOutput(outputId = "code.outcome.map", width = "100%", height = 600)
                              )
-                               # ))
+                             # ))
                            )
                   )
                 )
@@ -333,85 +333,89 @@ server <- function(input, output, session) {
   # council.subset <- reactive({
   #   return(council[council$Dist %in% input$council,])
   # })
-
+  
   observe({
     
     #Capture the Inputs
     city_districts <- input$citydistricts
     
-  output$code.outcome.map <- renderLeaflet({
-   if(city_districts){
-       leaflet() %>%
-       setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-       addTiles()%>%
-       addPolygons(data = abandoned.properties,
-                   popup = ~Popup_Text,
-                   color = ~pal2(properties.subset()$Outcome_St)) %>%
-       addPolygons(data = schools,
-                   popup = ~Popup_Text,
-                   color = ~school.pal(schools.subset()$SchoolType)) %>%
-       addPolygons(data = council,
-                   fillOpacity = 0.2,
-                   popup = ~Popup_Text,
-                   color = ~council.pal(council.dist) 
-       ) %>%
-       addPolygons(data = council,
-                   fillOpacity = 0.2,
-                   popup = ~Popup_Text,
-                   color = ~council.pal(council.dist)) %>%
-       addLegend("bottomright", pal = pal2, values = code.outcome.names,
-                 title = "Abandoned Property Legend",
-                 opacity = 1
-       ) %>%
-       addLegend("bottomright", pal = school.pal, values = schools.types,
-                 title = "School Type Legend",
-                 opacity = 1
-       )
-   }else{
-     if(input$school.names != "Select One") {
-       leaflet() %>%
-         setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-         addTiles()%>%
-         addPolygons(data = abandoned.properties, 
-                     popup = ~Popup_Text,
-                     color = ~pal2(properties.subset()$Outcome_St)) %>%
-         addPolygons(data = schools, 
-                     popup = ~Popup_Text, 
-                     color = ~school.pal(schools.subset()$SchoolType)) %>%
-         addLegend("bottomright", pal = pal2, values = code.outcome.names,
-                   title = "Abandoned Property Legend",
-                   opacity = 1
-         ) %>%
-         addLegend("bottomright", pal = school.pal, values = schools.types,
-                   title = "School Type Legend",
-                   opacity = 1
-         ) %>%
-       addPolygons(data = schools %>% filter(schools$School == input$school.names), 
-                   popup = ~Popup_Text, 
-                   color = "#3693eb") 
-     }#end if
-     else {
-    leaflet() %>%
-      setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-      addTiles()%>%
-      addPolygons(data = abandoned.properties, 
-                  popup = ~Popup_Text,
-                  color = ~pal2(properties.subset()$Outcome_St)) %>%
-      addPolygons(data = schools, 
-                  popup = ~Popup_Text, 
-                  color = ~school.pal(schools.subset()$SchoolType)) %>%
-      addLegend("bottomright", pal = pal2, values = code.outcome.names,
-                title = "Abandoned Property Legend",
-                opacity = 1
-      ) %>%
-      addLegend("bottomright", pal = school.pal, values = schools.types,
-                title = "School Type Legend",
-                opacity = 1
-      )
-     
-     }#end else
-    }# end else
-  })#end render leaflet
+    output$code.outcome.map <- renderLeaflet({
+      if(city_districts){
+        leaflet() %>%
+          setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+          addTiles()%>%
+          setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+          addProviderTiles(providers$Stamen.TonerLite) %>%
+          addPolygons(data = abandoned.properties,
+                      popup = ~Popup_Text,
+                      color = ~pal2(properties.subset()$Outcome_St)) %>%
+          addPolygons(data = schools,
+                      popup = ~Popup_Text,
+                      color = ~school.pal(schools.subset()$SchoolType)) %>%
+          addPolygons(data = council,
+                      fillOpacity = 0.2,
+                      popup = ~Popup_Text,
+                      color = ~council.pal(council.dist) 
+          ) %>%
+          addPolygons(data = council,
+                      fillOpacity = 0.2,
+                      popup = ~Popup_Text,
+                      color = ~council.pal(council.dist)) %>%
+          addLegend("bottomright", pal = pal2, values = code.outcome.names,
+                    title = "Abandoned Property Legend",
+                    opacity = 1
+          ) %>%
+          addLegend("bottomright", pal = school.pal, values = schools.types,
+                    title = "School Type Legend",
+                    opacity = 1
+          )
+      }else{
+        if(input$school.names != "Select One") {
+          leaflet() %>%
+            addTiles()%>%
+            setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+            addProviderTiles(providers$Stamen.TonerLite) %>%
+            addPolygons(data = abandoned.properties, 
+                        popup = ~Popup_Text,
+                        color = ~pal2(properties.subset()$Outcome_St)) %>%
+            addPolygons(data = schools, 
+                        popup = ~Popup_Text, 
+                        color = ~school.pal(schools.subset()$SchoolType)) %>%
+            addLegend("bottomright", pal = pal2, values = code.outcome.names,
+                      title = "Abandoned Property Legend",
+                      opacity = 1
+            ) %>%
+            addLegend("bottomright", pal = school.pal, values = schools.types,
+                      title = "School Type Legend",
+                      opacity = 1
+            ) %>%
+            addPolygons(data = schools %>% filter(schools$School == input$school.names), 
+                        popup = ~Popup_Text, 
+                        color = "#3693eb") 
+        }#end if
+        else {
+          leaflet() %>%
+            addTiles()%>%
+            setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+            addProviderTiles(providers$Stamen.TonerLite) %>%
+            addPolygons(data = abandoned.properties, 
+                        popup = ~Popup_Text,
+                        color = ~pal2(properties.subset()$Outcome_St)) %>%
+            addPolygons(data = schools, 
+                        popup = ~Popup_Text, 
+                        color = ~school.pal(schools.subset()$SchoolType)) %>%
+            addLegend("bottomright", pal = pal2, values = code.outcome.names,
+                      title = "Abandoned Property Legend",
+                      opacity = 1
+            ) %>%
+            addLegend("bottomright", pal = school.pal, values = schools.types,
+                      title = "School Type Legend",
+                      opacity = 1
+            )
+          
+        }#end else
+      }# end else
+    })#end render leaflet
   }) #end observe
   
   observeEvent(input$school.names, {
@@ -426,11 +430,11 @@ server <- function(input, output, session) {
                           popup = ~Popup_Text, 
                           color = "#3693eb") 
     if(input$citydistricts) {
-        proxy %>% addPolygons(data = council,
-                          fillOpacity = 0.2,
-                          popup = ~Popup_Text,
-                          color = ~council.pal(council.dist)
-        )#end add polygons
+      proxy %>% addPolygons(data = council,
+                            fillOpacity = 0.2,
+                            popup = ~Popup_Text,
+                            color = ~council.pal(council.dist)
+      )#end add polygons
     }#end if statement
   }) #end observe event 
   
@@ -461,8 +465,10 @@ server <- function(input, output, session) {
           leaflet()  %>%
             addTiles()  %>%
             # addMarkers(data = abandoned.properties %>% st_centroid(), popup = ~Outcome_St )
+            setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+            addProviderTiles(providers$Stamen.TonerLite) %>%
             addPolygons(data = abandoned.properties %>%
-                        filter(Outcome_St == input$abanType),
+                          filter(Outcome_St == input$abanType),
                         color = ~pal2(Outcome_St),
                         popup = ~Outcome_St) %>%
             addMarkers(data = parkLocDf.spatial,
@@ -476,12 +482,14 @@ server <- function(input, output, session) {
         }else{
           leaflet()  %>%
             addTiles()  %>%
+            setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+            addProviderTiles(providers$Stamen.TonerLite) %>%
             addPolygons(data = selectedProp %>%
-                        filter(Outcome_St == input$abanType),
+                          filter(Outcome_St == input$abanType),
                         color = ~pal2(Outcome_St),
                         popup = ~Outcome_St) %>%
             addMarkers(data = parkLocDf.spatial %>%
-                       filter(Park_Name == park_name),
+                         filter(Park_Name == park_name),
                        popup = ~Popup_Text,
                        icon = ~parkIcons[icon])  %>%
             addControl(html = html_legend, position = "bottomleft") %>% 
@@ -495,14 +503,16 @@ server <- function(input, output, session) {
         #Add tiles and Add Markers
         leaflet()  %>% 
           addTiles()  %>% 
+          setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+          addProviderTiles(providers$Stamen.TonerLite) %>%
           addPolygons(data = abandoned.properties %>% 
-                      filter(Outcome_St == aban_type), 
+                        filter(Outcome_St == aban_type), 
                       color = ~pal2(Outcome_St),
                       popup = ~Outcome_St) %>% 
           addLegend("bottomright", pal = pal2, 
-                  values = abandoned.properties$Outcome_St,
-                  title = "Abandoned Property Legend",
-                  opacity = 1)
+                    values = abandoned.properties$Outcome_St,
+                    title = "Abandoned Property Legend",
+                    opacity = 1)
       }
     })
     
@@ -594,7 +604,7 @@ server <- function(input, output, session) {
     abandon <- input$abandoned.outcome
     council_in <- input$council.dist
     council_len <- dim(abandoned.properties %>% 
-                      filter(Outcome_St %in% abandon))[1]
+                         filter(Outcome_St %in% abandon))[1]
     
     # Start Leaflet
     output$codesLeaflet <- renderLeaflet({
@@ -605,7 +615,7 @@ server <- function(input, output, session) {
                       filter(Outcome_St %in% abandon), 
                     color = ~pal2(Outcome_St)) %>% 
         addPolygons(data = council %>% 
-                    filter(Name %in% council_in), 
+                      filter(Name %in% council_in), 
                     color = colors,
                     fillOpacity = 0.04,
                     popup = ~popup) %>% 
