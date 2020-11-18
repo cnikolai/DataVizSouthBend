@@ -194,7 +194,7 @@ council.dist <- unique(council.properties$Name)
 # Define UI for application that draws a histogram
 ui <- fluidPage(theme = shinytheme("flatly"), 
                 
-                titlePanel("Dashboard for Abandoned Properties and Other Facities in South Bend, IN"),
+                titlePanel("Dashboard for Abandoned Properties and Other Facilities in South Bend, IN"),
                 
                 navbarPage(
                   " ",
