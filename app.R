@@ -296,7 +296,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                checkboxGroupInput(inputId = "schools.types",
                                                   label = "School Type",
                                                   choices = schools.types),
-                               checkboxInput(inputId = "citydistricts", "Overlay City Districts"),
+                               #checkboxInput(inputId = "citydistricts", "Overlay City Districts"),
                                selectInput(inputId = "school.names", 
                                            label = "School Name", 
                                            choices = c("Select One",selectedSchool))
@@ -337,39 +337,39 @@ server <- function(input, output, session) {
   observe({
     
     #Capture the Inputs
-    city_districts <- input$citydistricts
+    #city_districts <- input$citydistricts
     
     output$code.outcome.map <- renderLeaflet({
-      if(city_districts){
-        leaflet() %>%
-          setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-          addTiles()%>%
-          setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
-          addProviderTiles(providers$Stamen.TonerLite) %>%
-          addPolygons(data = abandoned.properties,
-                      popup = ~Popup_Text,
-                      color = ~pal2(properties.subset()$Outcome_St)) %>%
-          addPolygons(data = schools,
-                      popup = ~Popup_Text,
-                      color = ~school.pal(schools.subset()$SchoolType)) %>%
-          addPolygons(data = council,
-                      fillOpacity = 0.2,
-                      popup = ~Popup_Text,
-                      color = ~council.pal(council.dist) 
-          ) %>%
-          addPolygons(data = council,
-                      fillOpacity = 0.2,
-                      popup = ~Popup_Text,
-                      color = ~council.pal(council.dist)) %>%
-          addLegend("bottomright", pal = pal2, values = code.outcome.names,
-                    title = "Abandoned Property Legend",
-                    opacity = 1
-          ) %>%
-          addLegend("bottomright", pal = school.pal, values = schools.types,
-                    title = "School Type Legend",
-                    opacity = 1
-          )
-      }else{
+      #if(city_districts){
+      #   leaflet() %>%
+      #     setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+      #     addTiles()%>%
+      #     setView(zoom = 12, lat = 41.6764, lng = -86.2520) %>%
+      #     addProviderTiles(providers$Stamen.TonerLite) %>%
+      #     addPolygons(data = abandoned.properties,
+      #                 popup = ~Popup_Text,
+      #                 color = ~pal2(properties.subset()$Outcome_St)) %>%
+      #     addPolygons(data = schools,
+      #                 popup = ~Popup_Text,
+      #                 color = ~school.pal(schools.subset()$SchoolType)) %>%
+      #     # addPolygons(data = council,
+      #     #             fillOpacity = 0.2,
+      #     #             popup = ~Popup_Text,
+      #     #             color = ~council.pal(council.dist) 
+      #     # ) %>%
+      #     addPolygons(data = council,
+      #                 fillOpacity = 0.2,
+      #                 popup = ~Popup_Text,
+      #                 color = ~council.pal(council.dist)) %>%
+      #     addLegend("bottomright", pal = pal2, values = code.outcome.names,
+      #               title = "Abandoned Property Legend",
+      #               opacity = 1
+      #     ) %>%
+      #     addLegend("bottomright", pal = school.pal, values = schools.types,
+      #               title = "School Type Legend",
+      #               opacity = 1
+      #     )
+      # }else{
         if(input$school.names != "Select One") {
           leaflet() %>%
             addTiles()%>%
@@ -414,7 +414,7 @@ server <- function(input, output, session) {
             )
           
         }#end else
-      }# end else
+    #  }# end else
     })#end render leaflet
   }) #end observe
   
@@ -429,13 +429,13 @@ server <- function(input, output, session) {
     proxy %>% addPolygons(data = schools %>% filter(schools$School == input$school.names), 
                           popup = ~Popup_Text, 
                           color = "#3693eb") 
-    if(input$citydistricts) {
-      proxy %>% addPolygons(data = council,
-                            fillOpacity = 0.2,
-                            popup = ~Popup_Text,
-                            color = ~council.pal(council.dist)
-      )#end add polygons
-    }#end if statement
+    # if(input$citydistricts) {
+    #   proxy %>% addPolygons(data = council,
+    #                         fillOpacity = 0.2,
+    #                         popup = ~Popup_Text,
+    #                         color = ~council.pal(council.dist)
+    #   )#end add polygons
+    # }#end if statement
   }) #end observe event 
   
   #AVISEK'S CODE - Start
