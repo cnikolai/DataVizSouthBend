@@ -6,6 +6,7 @@ library(tidyverse)
 library(RColorBrewer)
 library(DT)
 library(scales)
+library(lwgeom)
 
 ## GLOBAL VARIABLES/DATA
 #setwd("/Users/cindy/Documents/ND MS Data Science/Data Viz/DataVizSouthBend")
@@ -104,6 +105,10 @@ names(distanceDf) <- c(c(1:1511), 'Park_Name', 'Park_Type')
 ## ===========================================================================================================
 
 
+# Import distance table for properties and lights
+property.lights.distances <- readRDS("streetlightDistancesLong.RData")
+
+
 # Clean up street.lights
 
 #Fix Bulb Type
@@ -136,11 +141,12 @@ street.lights$Lumens <- street.lights$Lumens %>% as.integer()
 street.lights$LumensClass <- paste(street.lights$LumensClass," (",street.lights$Lumens,")",sep="")
 
 street.lights.lumens.name <- unique(street.lights$LumensClass)
-
+street.lights.owners.name <- unique(street.lights$Ownership)
 
 street.lights.spatial <- street.lights %>%
   st_as_sf(coords = c("Lon","Lat")) %>%
   st_set_crs(value = 4326)
+
 
 
 ## ===========================================================================================================
@@ -199,30 +205,50 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                 navbarPage(
                   " ",
                   tabPanel(" Abandoned Properties  and   || Streetlights || ", #Tyler's Page
-                           titlePanel("Streetlights of South Bend, IN"),
-                           sidebarLayout(
-                             sidebarPanel(
-                               checkboxGroupInput(
-                                 inputId = "streetlights.lumens",
-                                 label = "Select Streetlight Brightness",
-                                 choices = street.lights.lumens.name,
-                                 selected = street.lights.lumens.name #select all by default,
-                               ), # End checkboxGroupInput for streetlights.lumens
-                               checkboxGroupInput(inputId = "code.outcome", 
-                                                  label = "Type of Abandoned Property", 
-                                                  choices = code.outcome.names, 
-                                                  selected = code.outcome.names, 
-                                                  inline = FALSE,
-                                                  width = NULL, 
-                                                  choiceNames = NULL, 
-                                                  choiceValues = NULL
-                               ) # End checkboxGroupInput for code outcome
-                             ), # End SidebarPanel
-                             mainPanel(
-                               leafletOutput(outputId = "streetsLeaflet")
-                             )
-                           ) # End SidebarLayout
-                           
+                           # titlePanel("Streetlights of South Bend, IN"),
+                           fluidRow(
+                             column(4,
+                                    checkboxGroupInput(inputId = "code.outcome", 
+                                                       label = "Type of Abandoned Property", 
+                                                       choices = code.outcome.names, 
+                                                       selected = code.outcome.names, 
+                                                       inline = FALSE,
+                                                       width = NULL, 
+                                                       choiceNames = NULL, 
+                                                       choiceValues = NULL
+                                    ),
+                                    # checkboxGroupInput(
+                                    #   inputId = "streetlights.lumens",
+                                    #   label = "Select Streetlight Brightness",
+                                    #   choices = street.lights.lumens.name,
+                                    #   selected = street.lights.lumens.name #select all by default,
+                                    # ), # End checkboxGroupInput for streetlights.lumens
+                                    checkboxGroupInput(
+                                      inputId = "streetlights.owners",
+                                      label = "Streetlight Ownership",
+                                      choices = street.lights.owners.name,
+                                      selected = street.lights.owners.name
+                                    ), #End checkboxGroupInput for Streetlight Owner
+                                    sliderInput(
+                                      inputId = "streetlight.proximity",
+                                      label = "Streetlight Proximity (meters)",
+                                      min = 5, max = 100, value = 25
+                                    ),
+                                    checkboxInput(
+                                      inputId = "only.show.proximity.streetlights", 
+                                      label = "Only Show Streetlights in Proximity", 
+                                      value = FALSE
+                                      ),
+                                    hr(),
+                                    plotOutput(outputId = "streetlightCountPlot")
+                                    
+                             ), #End of Column 1
+                             column(8,
+                                    leafletOutput("streetsLeaflet", width = "100%", height = 600),
+                                    dataTableOutput("streetlightsData")
+                             ) # End of column 2
+                             
+                           )#End of FluidRow
                   ), # End Tyler's Page
                   tabPanel("|| Parks || ",
                            # Application title
@@ -568,8 +594,70 @@ server <- function(input, output, session) {
   
   #TYLER'S CODE - START
   observe({
-    streetlights.lumens <- input$streetlights.lumens
+
+    #Grab input values
+    streetlights.owners <- input$streetlights.owners
     code.outcome <- input$code.outcome
+    streetlight.proximity <- input$streetlight.proximity 
+    only.show.proximity.streetlights <- input$only.show.proximity.streetlights
+    
+    #Filter Data based upon Inputs
+    focusProperties <- abandoned.properties %>% 
+      filter(Outcome_St %in% code.outcome)
+    focusProperties$OBJECTID <- focusProperties$OBJECTID %>% as.factor()
+    
+    focusStreetlights <- street.lights.spatial %>%
+      filter(Ownership %in% streetlights.owners)
+    focusStreetlights$OBJECTID <- focusStreetlights$OBJECTID %>% as.factor() 
+    
+    # streetlightsData <- street.lights %>%
+    #   filter(Ownership %in% streetlights.owners) %>%
+    #   select(Pole_Number, Ownership, Address, LumensClass, Service, Wattage, Inspect_Date)
+    
+    #Distances of Properties and Lights within our focus
+    focusDistances <- property.lights.distances %>% 
+      filter(Property_ID %in% (unique(focusProperties$OBJECTID))) %>% 
+      filter(light_ID %in% (unique(focusStreetlights$OBJECTID)))
+    
+    #For each property in focus, how many lights in focus are within the proximity distance?
+    focusProperties <- left_join(
+      focusProperties,
+      focusDistances %>% 
+        rename(OBJECTID = Property_ID) %>%
+        group_by(OBJECTID) %>%
+        filter(distance < streetlight.proximity) %>%
+        summarize(Streetlights_In_Proximity = n()),
+      by="OBJECTID"
+    )
+    focusProperties$Streetlights_In_Proximity <- focusProperties$Streetlights_In_Proximity %>% 
+      replace_na(0) %>% as.numeric()
+    
+    # Add a popup for Number of Streetlights nearby
+    focusProperties$Popup_Text_Streetlights <- paste(
+      "<b>Property Name: ", 
+      ifelse(is.na(focusProperties$Direction),paste(focusProperties$Street_Nam, focusProperties$Suffix, sep = " "),
+             paste(focusProperties$Direction, 
+                   focusProperties$Street_Nam, 
+                   focusProperties$Suffix, sep = " ")), 
+      "<br>",
+      "Code Enforcement: ", focusProperties$Code_Enfor,
+      "</br>",
+      "Number of Proximate Streetlights: ", focusProperties$Streetlights_In_Proximity,
+      sep=" "
+    )
+      
+    if(only.show.proximity.streetlights) {
+      # Reduce focusStreetlights to those in proximity
+      focusStreetlights <- inner_join(
+        focusStreetlights,
+        focusDistances %>% filter(distance < streetlight.proximity) %>% 
+          rename(OBJECTID = light_ID) %>%
+          select(OBJECTID),
+        by ="OBJECTID"
+      )
+    }
+    
+    lightOpacity = 0.15
     
     output$streetsLeaflet <- renderLeaflet({
       leaflet() %>%
@@ -577,26 +665,60 @@ server <- function(input, output, session) {
         addProviderTiles(providers$Stamen.TonerLite) %>%
         addPolygons(
           weight=1,
-          # layerId = abandoned.properties$geometry,
-          # group = abandoned.properties$Code_Enfor,
-          data = abandoned.properties %>% 
-            filter(Outcome_St %in% code.outcome)
+          color = ~pal2(Outcome_St),
+          popup = ~Popup_Text_Streetlights, 
+          data = focusProperties
         ) %>% addCircles(
           stroke = 0,
-          fillOpacity = 0.2,
+          fillOpacity = lightOpacity,
           radius = ~ sqrt(Lumens/20),
           color = "green",
           group = street.lights.spatial$LumensClass,
-          data = street.lights.spatial %>% 
-            filter(LumensClass %in% streetlights.lumens) 
-        )# %>%
-      # addLayersControl(
-      #   overlayGroups = c(
-      #     street.lights.spatial$LumensClass
-      #   ),
-      #   options = layersControlOptions(collapsed = F)
+          data = focusStreetlights
+        ) %>% 
+        addLegend("bottomright", pal = pal2, values = code.outcome.names,
+                  title = "Abandoned Property Legend",
+                  opacity = 1
+        )
+    })
+    
+    output$streetlightCountPlot <- renderPlot({
+      x <- focusProperties$Streetlights_In_Proximity
+      hist(
+        x,
+        main = "Number of Proximate Streetlights",
+        axes = T,
+        xlab = "Number of Streetlights In Proximity",
+        ylab = ""
+      )
+      
+      # ggplot(
+      #   focusProperties,
+      #   aes(x=Streetlights_In_Proximity)
+      # ) + geom_histogram(
+      #   # aes(color = Outcome_St, fill = Outcome_St),
+      #   # position = "identity",
+      #   # alpha = 0.4
+      # ) + labels(
+      #   x = "Number of Streetlights In Proximity",
+      #   title = "Selected Properties: Number of Proximate Streetlights"
       # )
     })
+    
+    #Datatable
+    output$streetlightsData <- DT::renderDataTable (
+      focusProperties %>% 
+        st_set_geometry(NULL) %>%
+        select(Address_Nu,Street_Nam,Zip_Code,Council_Di,Outcome_St,Streetlights_In_Proximity) %>%
+        rename(`Proximate Streetlights` = Streetlights_In_Proximity) %>%
+        rename(`Address Number` = Address_Nu, 
+               `Street Name` = Street_Nam, 
+               Zip = Zip_Code,
+               `Council District` = Council_Di,
+               Outcome = Outcome_St), 
+      rownames = NULL, width = 200, height = 100,
+      options = list(scrollX = TRUE, scrollY = TRUE)
+    ) 
   })
   
   # BEN'S CODE - START
